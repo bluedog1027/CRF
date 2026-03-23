@@ -5,7 +5,7 @@ export interface ICRFFieldConfig {
   displayName: string;
   fieldType: FieldType;
   options?: string[];
-  usedInContentTypes: string[];
+  usedInContentTypes?: string[];
 }
 
 export enum CRFContentType {
