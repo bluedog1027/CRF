@@ -1,0 +1,40 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "comm-request-forms-client-side-solution",
+    "id": "c7459001-cab5-4b5b-bc53-6f4b5c7ac83a",
+    "version": "1.0.0.0",
+    "includeClientSideAssets": true,
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "developer": {
+      "name": "",
+      "websiteUrl": "",
+      "privacyUrl": "",
+      "termsOfUseUrl": "",
+      "mpnId": "Undefined-1.20.0"
+    },
+    "metadata": {
+      "shortDescription": {
+        "default": "CommRequestForms description"
+      },
+      "longDescription": {
+        "default": "CommRequestForms description"
+      },
+      "screenshotPaths": [],
+      "videoUrl": "",
+      "categories": []
+    },
+    "features": [
+      {
+        "title": "comm-request-forms Feature",
+        "description": "The feature that activates elements of the comm-request-forms solution.",
+        "id": "997714dd-fd2c-4bb3-8761-54a28e28b2b3",
+        "version": "1.0.0.0"
+      }
+    ]
+  },
+  "paths": {
+    "zippedPackage": "solution/comm-request-forms.sppkg"
+  }
+}

@@ -1,0 +1,193 @@
+﻿InternalName,DisplayName,FieldType,UsedInContentTypes
+Title,Project/Event Name,Text (Text),CRF General; CRF Marketing; CRF Transfer; CRF QA
+Desired_x0020_Publish_x0020_Date,Desired Publish Date,DateTime (DateTime),CRF General; CRF Marketing; CRF Transfer; CRF QA
+Effective_x0020_Date,Effective Date,DateTime (DateTime),CRF General; CRF Marketing; CRF Transfer; CRF QA
+Stores_x0020_or_x0020_Channels_x,Store Type or Channels Affected,"MultiChoice [ALL US (including HI & PR)
+ALL CAN (including Quebec French)
+Select US
+Select CAN
+US GYM
+CAN GYM]",CRF General; CRF Marketing; CRF Transfer; CRF QA
+Are_x0020_resources_x0020_availa,Are resources available for reference?,"Choice [Yes
+No]",CRF General; CRF Marketing; CRF Transfer; CRF QA
+Will_x0020_materials_x0020_be_x0,Will materials be delivered to the store?,"Choice [Yes
+No]",CRF General; CRF Marketing; CRF Transfer; CRF QA
+Are_x0020_materials_x0020_re_x00,Are materials re-orderable?,"Choice [Yes
+No
+N/A]",CRF General; CRF Marketing; CRF Transfer; CRF QA
+Who_x0020_can_x0020_stores_x002f,Who can stores/DMs contact for support?,Text (Text),CRF General; CRF Marketing; CRF Transfer; CRF QA
+Scope_x0020_of_x0020_Project,Scope of Project,Note (Note),CRF General; CRF Marketing; CRF Transfer; CRF QA
+Due_x0020_by_x0020_Date,Due By Date,DateTime (DateTime),CRF Marketing
+Distribution_x0020_Start_x0020_D,Distribution Start Date,DateTime (DateTime),CRF Marketing
+Distribution_x0020_End_x0020_Dat,Distribution End Date,DateTime (DateTime),CRF Marketing
+Redemption_x0020_Start_x0020_Dat,Redemption Start Date,DateTime (DateTime),CRF Marketing
+Redemption_x0020_End_x0020_Date,Redemption End Date,DateTime (DateTime),CRF Marketing
+Terms_x0020__x0026__x0020_Condit,Terms & Conditions,Note (Note),CRF Marketing
+Can_x0020_marketing_x0020_materi,Can coupons be purged upon completion?,"Choice [Yes
+No
+N/A]",CRF Marketing
+Will_x0020_online_x002c__x0020_e,"Will online, email, text, or direct mailing be sent to customers?",Note (Note),CRF Marketing
+What_x0020_type_x0020_of_x0020_m,What type of merchandise do you want transferred?,Text (Text),CRF Transfer
+Is_x0020_there_x0020_a_x0020_spe,Is there a specific transfer-in direction?,"Choice [Yes
+No]",CRF Transfer
+Is_x0020_there_x0020_a_x0020_spe0,Is there a specific transfer-out direction?,"Choice [Yes
+No] ",CRF Transfer
+When_x0020_do_x0020_you_x0020_wa,When do you want the transfer completed by?,DateTime (DateTime),CRF Transfer
+Category_x0020_Name,Category Name,Text (Text),CRF General; CRF Transfer
+Smart_x0020_Code,Smart Code,Text (Text),CRF Transfer; CRF QA
+Generic_x0020_Article_x0020_Numb,Generic Article Number,Text (Text),CRF Transfer; CRF QA
+Generic_x0020_Article_x0020_Desc,Generic Article Description,Text (Text),CRF Transfer; CRF QA
+UPAs,UPAS,Text (Text),CRF Transfer
+Is_x0020_this_x0020_a_x0020_stor,Is this a store to store transfer or store to DC transfer?,"Choice [Store to Store
+Store to DC]",CRF Transfer
+Was_x0020_this_x0020_request_x00,Was this request initiated by the Legal department?,"Choice [Yes
+No]",CRF QA
+Legal_x0020_Approver_x0020_Name,Legal Approver Name,Text (Text),CRF QA
+Merchant_x0020_Approver_x0020_Na,Merchant Approver Name,Text (Text),CRF QA
+Sourcing_x0020_Approver_x0020_Na,Sourcing Approver Name,Text (Text),CRF QA
+Division,Division,"MultiChoice [Accessories/Shoes
+Newborn
+Big Boy
+Big Girl
+Toddler Boy
+Toddler Girl
+Sleep
+Graphics]",CRF General; CRF Transfer; CRF QA
+Style_x0020_Color_x0028_s_x0029_,Style Color(s),Text (Text),CRF QA
+Style_x0020_Size_x0028_s_x0029_,Style Size(s),Text (Text),CRF QA
+Description_x0020_of_x0020_Quali,Description of Quality Issue,Text (Text),CRF QA
+Is_x0020_inspection_x0020_requir,Is inspection required?,"Choice [No
+Yes]",CRF QA
+Initial_x0020_Store_x0020_Action,Initial Store Action,"Choice [Hold (Follow up action TBD)
+Transfer to DC
+Transfer to HQ
+Transfer to Other
+Destroy
+Recall (Transfer to DC)
+Recall (Transfer to HQ)
+Recall (Transfer to Other)
+Damage Out (Sellable-Keep in store)
+Damage Out (Non-Sellable-Transfer to salvage company)
+Damage Out (Non-Sellable-Transfer to charity-HI & PR)
+Damage Out (Non-Sellable-Destroy-CAN ONLY)]",CRF QA
+Action_x0020_for_x0020_Returns,Action for Returns,"Choice [Pull & Hold (Follow up action TBD)
+Recall (Transfer to DC)
+Recall (Transfer to HQ)
+Recall (Transfer to Other)
+Destroy
+Pull & Transfer to DC
+Pull & Transfer to HQ
+Pull & Transfer to Other
+Damage Out (Sellable-Keep in store)
+Damage Out (Non-Sellable-Transfer to salvage company)
+Damage Out (Non-Sellable-Transfer to charity)
+Damage Out (Non-Sellable-Destroy)]",CRF QA
+Action_x0020_for_x0020_Incoming_,Action for Incoming Shipments,"Choice [No additional shipments expected
+Pull & Hold (Follow up action TBD)
+Recall (Transfer to DC)
+Recall (Transfer to HQ)
+Recall (Transfer to Other)
+Destroy
+Pull & Transfer to DC
+Pull & Transfer to HQ
+Pull & Transfer to Other
+Damage Out (Sellable-Keep in store)
+Damage Out (Non-Sellable-Transfer to salvage company)
+Damage Out (Non-Sellable-Transfer to charity)
+Damage Out (Non-Sellable-Destroy) ]",CRF QA
+UPAs_x0020_On_x0020_Hand,UPAS On Hand,Text (Text),CRF QA
+Are_x0020_items_x0020_in_x0020_t,Are items in transit?,"Choice [Yes
+No]",CRF QA
+UPAs_x0020_arriving_x0020_in_x00,UPAS arriving in shipment,Text (Text),CRF QA
+Is_x0020_a_x0020_compliance_x002,Is a compliance survey required?,"Choice [Yes
+No]",CRF QA
+Is_x0020_the_x0020_Store_x0020_L,Is the Store Labor Team funding payroll to support this?,"Choice [Yes
+No]",CRF QA
+Compliance_x0020_Survey_x0020_Li,Compliance Survey Link,Text (Text),CRF QA
+Payroll_x0020_Direction,Is there specific Payroll direction?,"Choice [Yes
+No]",CRF QA
+Inspection_x0020_Guidelines,Are there specific inspection guidelines?,"Choice [No
+Yes]",CRF QA
+Status,Status,"Choice [Pending
+Approved
+Unresolved​]",CRF General; CRF Marketing; CRF Transfer; CRF QA
+Department,Department,"Choice [Engagement
+Finance
+HR
+IT
+Internal Audit
+Legal
+Logistics
+Loss Prevention
+Maintenance
+Marketing
+Merchandising
+Omnichannel
+Planning & Allocation
+Quality Assurance
+Real Estate
+Store Comm
+Store Ops
+Supply/Maintenance
+Tax
+Visual
+N/A]",CRF General; CRF Marketing; CRF Transfer; CRF QA
+Language,Language,"MultiChoice [ENGLISH
+FRENCH
+SPANISH]",CRF General; CRF Marketing; CRF Transfer; CRF QA
+Management_x0020_Visibility,Minimum Management Visibility,"Choice [All Store Associates
+District Managers
+HQ
+Store Leaders (SLs or Keyholders)
+Store Managers
+Regional Directors]",CRF General; CRF Marketing; CRF Transfer; CRF QA
+Who_x0020_in_x0020_Store_x0020_O,What member of Store Operations has reviewed this CRF? What other team members should be included in the approval email?,User (UserMulti),CRF General; CRF Marketing; CRF Transfer; CRF QA
+Expiration_x0020_Date,Portal Expiration Date,DateTime (DateTime),CRF General; CRF Marketing; CRF Transfer; CRF QA
+Comm_x0020_Status,Comm Status,"Choice [Cancelled
+Placeholder
+Pending Draft
+Published]",CRF General; CRF Marketing; CRF Transfer; CRF QA
+Monthly_x0020_Agenda_x003f_,Monthly Agenda?,"Choice [No
+Yes]",CRF General; CRF Marketing; CRF Transfer; CRF QA
+Error_x003f_,Error?,"Choice [No
+Yes]",CRF General; CRF Marketing; CRF Transfer; CRF QA
+Reason_x0020_for_x0020_error_x00,Reason for error?,Text (Text),CRF General; CRF Marketing; CRF Transfer; CRF QA
+Actual_x0020_Publication_x0020_D,Actual Publication Date,DateTime (DateTime),CRF General; CRF Marketing; CRF Transfer; CRF QA
+First_x0020_draft_x0020_due_x002,First draft due by:,DateTime (DateTime),CRF General; CRF Marketing; CRF Transfer; CRF QA
+Final_x0020_approval_x0020_due_x,Final approval due by:,DateTime (DateTime),CRF General; CRF Marketing; CRF Transfer; CRF QA
+Communication_x0020_Vehicle,Communication Vehicle,"Choice [Store Portal- Pricing
+Store Portal- Newsletter
+Store Portal- Store Ops Omni
+Store Portal- Marketing/Visual
+Store Portal- QA/Transfers
+Store Portal- HR
+Store Portal- Misc.
+Store Alert
+Monthly Agenda
+UFU
+News Article
+TSt Email
+Workload Calendar
+Mailpack
+Bi-Weekly Newsletter]",CRF General; CRF Marketing; CRF Transfer; CRF QA
+Approval_x0020_Lock,Approval Lock,"Choice [Yes
+No]",CRF General; CRF Marketing; CRF Transfer; CRF QA
+CRF_x0020_Approval_x0020_WF_x002,CRF Approval WF 7920,URL (URL),CRF Marketing
+Actual_x0020_Fiscal_x0020_Week,Published Fiscal Week,Number (Number),CRF General; CRF Marketing; CRF Transfer; CRF QA
+Comm_x0020_Owner,Comm Owner,"Choice [Barbara Van Voorhis
+Michelle Tucci]",CRF General; CRF Marketing; CRF Transfer; CRF QA
+Submitter,Approver,User (User),CRF General; CRF Marketing; CRF Transfer; CRF QA
+Comm_x0020_Type,Comm Error Type,"Choice [Mid-Day Pricing
+Pricing Update
+Quality
+Re-price/Re-ticket
+Transfer]",CRF General; CRF Marketing; CRF Transfer; CRF QA
+Impacted_x0020_Brand,Impacted Brand,"MultiChoice [TCP
+GYM]",CRF General; CRF Marketing; CRF Transfer; CRF QA
+Effective_x0020_Fiscal_x0020_Wee,Effective Fiscal Week,Number (Number),CRF General; CRF Marketing; CRF Transfer; CRF QA
+Effective_x0020_End_x0020_Date,Effective End Date,DateTime (DateTime),CRF General; CRF Marketing; CRF Transfer; CRF QA
+qs8f,Text,Text (Text),CRF General
+FlowStatus,FlowStatus,"Choice [Created
+Changed
+Finished]",CRF General; CRF Marketing; CRF Transfer; CRF QA
+Sign_x002d_off_x0020_status,Sign-off status,Text (Text),CRF General; CRF Marketing; CRF Transfer; CRF QA

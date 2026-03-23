@@ -1,0 +1,18 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/config.2.0.schema.json",
+  "version": "2.0",
+  "bundles": {
+    "crf-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/crf/CrfWebPart.js",
+          "manifest": "./src/webparts/crf/CrfWebPart.manifest.json"
+        }
+      ]
+    }
+  },
+  "externals": {},
+  "localizedResources": {
+    "CrfWebPartStrings": "lib/webparts/crf/loc/{locale}.js"
+  }
+}
