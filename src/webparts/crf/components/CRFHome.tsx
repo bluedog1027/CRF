@@ -4,12 +4,6 @@ import { SPFI } from "@pnp/sp";
 import {
   Badge,
   Button,
-  DataGrid,
-  DataGridBody,
-  DataGridCell,
-  DataGridHeader,
-  DataGridHeaderCell,
-  DataGridRow,
   Dialog,
   DialogActions,
   DialogBody,
@@ -245,22 +239,22 @@ const CRFHome: React.FC<CRFHomeProps> = ({ sp }) => {
     }
 
     return (
-      <DataGrid items={items} columns={[{ columnId: "title" }]}>
-        <DataGridHeader>
-          <DataGridRow>
-            <DataGridHeaderCell columnId="title">Project/Event</DataGridHeaderCell>
-            <DataGridHeaderCell columnId="status">Comm Status</DataGridHeaderCell>
-            <DataGridHeaderCell columnId="department">Department</DataGridHeaderCell>
-            <DataGridHeaderCell columnId="type">Comm Type</DataGridHeaderCell>
-            <DataGridHeaderCell columnId="flow">Flow Status</DataGridHeaderCell>
-            <DataGridHeaderCell columnId="actions">Actions</DataGridHeaderCell>
-          </DataGridRow>
-        </DataGridHeader>
-        <DataGridBody<ICRFFormItem>>
-          {({ item }) => (
-            <DataGridRow key={item.Id}>
-              <DataGridCell>{item.Title}</DataGridCell>
-              <DataGridCell>
+      <table className={styles.simpleTable}>
+        <thead>
+          <tr>
+            <th>Project/Event</th>
+            <th>Comm Status</th>
+            <th>Department</th>
+            <th>Comm Type</th>
+            <th>Flow Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((item) => (
+            <tr key={item.Id}>
+              <td>{item.Title}</td>
+              <td>
                 {item.Comm_x0020_Status ? (
                   <Badge appearance="filled" color={statusColor(item.Comm_x0020_Status)}>
                     {item.Comm_x0020_Status}
@@ -268,11 +262,11 @@ const CRFHome: React.FC<CRFHomeProps> = ({ sp }) => {
                 ) : (
                   "-"
                 )}
-              </DataGridCell>
-              <DataGridCell>{item.Department ?? "-"}</DataGridCell>
-              <DataGridCell>{item.Comm_x0020_Type ?? "-"}</DataGridCell>
-              <DataGridCell>{item.FlowStatus ?? "-"}</DataGridCell>
-              <DataGridCell>
+              </td>
+              <td>{item.Department ?? "-"}</td>
+              <td>{item.Comm_x0020_Type ?? "-"}</td>
+              <td>{item.FlowStatus ?? "-"}</td>
+              <td>
                 <div className={styles.actionsCell}>
                   <Button
                     icon={<EditRegular />}
@@ -285,11 +279,11 @@ const CRFHome: React.FC<CRFHomeProps> = ({ sp }) => {
                     onClick={() => setDeleteTarget(item)}
                   />
                 </div>
-              </DataGridCell>
-            </DataGridRow>
-          )}
-        </DataGridBody>
-      </DataGrid>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     );
   };
 

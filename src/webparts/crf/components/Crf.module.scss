@@ -66,7 +66,34 @@
   padding: clamp(1rem, 1.5vw, 1.75rem);
   box-shadow: 0 25px 40px rgba(15, 23, 42, 0.08);
   border: 1px solid var(--crf-border);
-  overflow: hidden;
+  overflow-x: auto;
+}
+
+.simpleTable {
+  width: 100%;
+  border-collapse: collapse;
+
+  thead th {
+    text-align: left;
+    font-weight: 600;
+    color: #1d1d1f;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    padding: 0.7rem 0.6rem;
+    border-bottom: 1px solid var(--crf-border);
+    white-space: nowrap;
+  }
+
+  tbody td {
+    padding: 0.75rem 0.6rem;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    vertical-align: middle;
+  }
+
+  tbody tr:hover {
+    background: rgba(15, 23, 42, 0.035);
+  }
 }
 
 :global(.fui-DataGridHeaderCell) {

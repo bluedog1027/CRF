@@ -128,8 +128,9 @@ export class CRFService {
       }
 
       if (Array.isArray(value)) {
-        if (value.every((entry) => typeof entry === "object" && entry !== null && "id" in entry)) {
-          const ids = value
+        const entries = value as unknown[];
+        if (entries.every((entry: unknown) => typeof entry === "object" && entry !== null && "id" in (entry as object))) {
+          const ids = entries
             .map((entry: any) => entry?.id)
             .filter((id: unknown): id is number => typeof id === "number");
           body[`${key}Id`] = { results: ids };
@@ -177,12 +178,12 @@ export class CRFService {
 
   public async ensureUser(loginName: string): Promise<IUserReference> {
     const ensured = await this.sp.web.ensureUser(loginName);
-    const data = ensured.data;
+    const data: any = ensured;
     return {
-      id: data.Id,
-      title: data.Title,
-      email: data.Email,
-      loginName: data.LoginName,
+      id: data.Id ?? data.data?.Id,
+      title: data.Title ?? data.data?.Title,
+      email: data.Email ?? data.data?.Email,
+      loginName: data.LoginName ?? data.data?.LoginName,
     };
   }
 

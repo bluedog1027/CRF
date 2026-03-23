@@ -340,14 +340,35 @@ const PeoplePickerField: React.FC<PeoplePickerFieldProps> = ({ label, value, mul
     setSuggestions([]);
   };
 
-  const removePerson = (personId?: number) => {
-    if (!personId) {
+  const tagValueForPerson = (person: IUserReference): string => {
+    if (typeof person.id === "number") {
+      return `id:${person.id}`;
+    }
+    if (person.loginName) {
+      return `login:${person.loginName}`;
+    }
+    return `label:${person.email ?? person.title ?? ""}`;
+  };
+
+  const removePersonByTagValue = (tagValue: string) => {
+    if (!tagValue) {
       onChange(multi ? [] : null);
       return;
     }
 
+    const [kind, valuePart] = tagValue.split(":", 2);
     if (multi) {
-      onChange(selected.filter((entry) => entry.id !== personId));
+      const next = selected.filter((entry) => {
+        if (kind === "id") {
+          return `${entry.id ?? ""}` !== valuePart;
+        }
+        if (kind === "login") {
+          return (entry.loginName ?? "") !== valuePart;
+        }
+        const label = entry.email ?? entry.title ?? "";
+        return label !== valuePart;
+      });
+      onChange(next);
     } else {
       onChange(null);
     }
@@ -357,13 +378,13 @@ const PeoplePickerField: React.FC<PeoplePickerFieldProps> = ({ label, value, mul
     <Field label={label} className={styles.peoplePickerField}>
       <div className={styles.peoplePickerShell}>
         {selected.length > 0 && (
-          <TagGroup>
+          <TagGroup dismissible onDismiss={(_, data) => removePersonByTagValue(String(data.value))}>
             {selected.map((person) => (
               <Tag
-                key={person.id ?? person.loginName}
+                key={tagValueForPerson(person)}
+                value={tagValueForPerson(person)}
                 shape="rounded"
                 dismissible
-                onDismiss={() => removePerson(person.id)}
               >
                 {person.title ?? person.email ?? person.loginName}
               </Tag>
