@@ -3,6 +3,7 @@ import "@pnp/sp/webs";
 import "@pnp/sp/lists";
 import "@pnp/sp/items";
 import "@pnp/sp/items/get-all";
+import "@pnp/sp/attachments";
 import "@pnp/sp/content-types";
 import "@pnp/sp/site-users/web";
 import "@pnp/sp/profiles";
@@ -43,6 +44,7 @@ export class CRFService {
         "Department",
         "Comm_x0020_Type",
         "FlowStatus",
+        "Actual_x0020_Publication_x0020_D",
         "Created",
         "ContentTypeId",
         "ContentType/Name",
@@ -52,7 +54,7 @@ export class CRFService {
       )
       .expand("Author", "ContentType")
       .top(pageSize)
-      .orderBy("Created", false);
+      .orderBy("Actual_x0020_Publication_x0020_D", false);
 
     const filters: string[] = [];
 
@@ -114,6 +116,18 @@ export class CRFService {
   public async updateItem(id: number, payload: Partial<ICRFFormItem>): Promise<void> {
     const body = this.normalizePayload(payload);
     await this.sp.web.lists.getByTitle(this.listName).items.getById(id).update(body);
+  }
+
+  public async addAttachments(itemId: number, files: File[]): Promise<void> {
+    if (!files?.length) {
+      return;
+    }
+
+    const item = this.sp.web.lists.getByTitle(this.listName).items.getById(itemId);
+    for (const file of files) {
+      const content = await file.arrayBuffer();
+      await item.attachmentFiles.add(file.name, content);
+    }
   }
 
   public async deleteItem(id: number): Promise<void> {
