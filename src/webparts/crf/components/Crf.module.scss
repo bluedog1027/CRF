@@ -1,5 +1,11 @@
 @import "~@fluentui/react/dist/sass/References.scss";
 
+:global {
+  .CanvasZoneSectionContainer{
+    max-width: 100% !important;
+  }
+}
+
 :root {
   --crf-bg: linear-gradient(180deg, #f7f9fb 0%, #eef2f6 100%);
   --crf-card: #ffffff;

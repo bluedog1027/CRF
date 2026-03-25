@@ -256,7 +256,7 @@ const CRFHome: React.FC<CRFHomeProps> = ({ sp }) => {
               <td>{item.Title}</td>
               <td>
                 {item.Comm_x0020_Status ? (
-                  <Badge appearance="filled" color={statusColor(item.Comm_x0020_Status)}>
+                  <Badge style={{padding: 15}} appearance="filled" color={statusColor(item.Comm_x0020_Status)}>
                     {item.Comm_x0020_Status}
                   </Badge>
                 ) : (
