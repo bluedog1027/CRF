@@ -5,7 +5,6 @@ import {
   Badge,
   Button,
   Dialog,
-  DialogActions,
   DialogBody,
   DialogContent,
   DialogSurface,
@@ -26,7 +25,7 @@ import {
   useToastController,
   webLightTheme,
 } from "@fluentui/react-components";
-import { AddRegular, ArrowClockwiseRegular, DeleteRegular, EditRegular } from "@fluentui/react-icons";
+import { AddRegular, ArrowClockwiseRegular, EditRegular } from "@fluentui/react-icons";
 import { CRFService } from "../../../services/CRFService";
 import { ICRFFormItem } from "../../../models/ICRFFormItem";
 import { CRFContentType } from "../../../models/CRFFieldModel";
@@ -73,8 +72,6 @@ const CRFHome: React.FC<CRFHomeProps> = ({ sp }) => {
   const [activeItem, setActiveItem] = React.useState<ICRFFormItem | null>(null);
   const [isFormLoading, setIsFormLoading] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
-  const [deleteTarget, setDeleteTarget] = React.useState<ICRFFormItem | null>(null);
-  const [isDeleting, setIsDeleting] = React.useState(false);
   const [contentTypeMap, setContentTypeMap] = React.useState<Record<string, string>>({});
 
   const toasterId = useId("crf-toaster");
@@ -173,7 +170,7 @@ const CRFHome: React.FC<CRFHomeProps> = ({ sp }) => {
     setIsFormLoading(false);
   };
 
-  const handleFormSubmit = async (values: Partial<ICRFFormItem>) => {
+  const handleFormSubmit = async (values: Partial<ICRFFormItem>, attachments: File[]) => {
     if (!formState) {
       return;
     }
@@ -185,10 +182,16 @@ const CRFHome: React.FC<CRFHomeProps> = ({ sp }) => {
         if (contentTypeId) {
           payload.ContentTypeId = contentTypeId;
         }
-        await service.createItem(payload as ICRFFormItem);
+        const created = await service.createItem(payload as ICRFFormItem);
+        if (created.Id && attachments.length) {
+          await service.addAttachments(created.Id, attachments);
+        }
         notify("CRF created");
       } else {
         await service.updateItem(formState.itemId, values);
+        if (attachments.length) {
+          await service.addAttachments(formState.itemId, attachments);
+        }
         notify("CRF updated");
       }
       closeForm();
@@ -202,23 +205,15 @@ const CRFHome: React.FC<CRFHomeProps> = ({ sp }) => {
     }
   };
 
-  const confirmDelete = async () => {
-    if (!deleteTarget?.Id) {
-      return;
+  const formatActualPublishDate = (value?: string | null): string => {
+    if (!value) {
+      return "-";
     }
-    setIsDeleting(true);
-    try {
-      await service.deleteItem(deleteTarget.Id);
-      notify("CRF deleted");
-      setDeleteTarget(null);
-      await loadItems();
-    } catch (err: any) {
-      const message = err.message ?? "Unable to delete item.";
-      setError(message);
-      notify("Delete failed", message, "error");
-    } finally {
-      setIsDeleting(false);
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return "-";
     }
+    return date.toLocaleDateString();
   };
 
   const renderGrid = () => {
@@ -245,8 +240,7 @@ const CRFHome: React.FC<CRFHomeProps> = ({ sp }) => {
             <th>Project/Event</th>
             <th>Comm Status</th>
             <th>Department</th>
-            <th>Comm Type</th>
-            <th>Flow Status</th>
+            <th>Actual publish date</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -264,19 +258,13 @@ const CRFHome: React.FC<CRFHomeProps> = ({ sp }) => {
                 )}
               </td>
               <td>{item.Department ?? "-"}</td>
-              <td>{item.Comm_x0020_Type ?? "-"}</td>
-              <td>{item.FlowStatus ?? "-"}</td>
+              <td>{formatActualPublishDate(item.Actual_x0020_Publication_x0020_D)}</td>
               <td>
                 <div className={styles.actionsCell}>
                   <Button
                     icon={<EditRegular />}
                     appearance="subtle"
                     onClick={() => openEditForm(item)}
-                  />
-                  <Button
-                    icon={<DeleteRegular />}
-                    appearance="subtle"
-                    onClick={() => setDeleteTarget(item)}
                   />
                 </div>
               </td>
@@ -380,31 +368,6 @@ const CRFHome: React.FC<CRFHomeProps> = ({ sp }) => {
         </DialogSurface>
       </Dialog>
 
-      <Dialog
-        open={Boolean(deleteTarget)}
-        onOpenChange={(_, data) => {
-          if (!data.open) {
-            setDeleteTarget(null);
-          }
-        }}
-      >
-        <DialogSurface>
-          <DialogBody>
-            <DialogTitle>Delete request</DialogTitle>
-            <DialogContent>
-              Are you sure you want to delete "{deleteTarget?.Title}"? This action cannot be undone.
-            </DialogContent>
-            <DialogActions>
-              <Button appearance="secondary" onClick={() => setDeleteTarget(null)} disabled={isDeleting}>
-                Cancel
-              </Button>
-              <Button appearance="primary" onClick={confirmDelete} disabled={isDeleting}>
-                {isDeleting ? "Deleting" : "Delete"}
-              </Button>
-            </DialogActions>
-          </DialogBody>
-        </DialogSurface>
-      </Dialog>
     </FluentProvider>
   );
 };

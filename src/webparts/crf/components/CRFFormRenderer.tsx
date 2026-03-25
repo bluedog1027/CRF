@@ -26,7 +26,7 @@ export interface ICRFFormRendererProps {
   service: CRFService;
   initialValues?: Partial<ICRFFormItem> | null;
   isSubmitting?: boolean;
-  onSubmit: (values: Partial<ICRFFormItem>) => Promise<void>;
+  onSubmit: (values: Partial<ICRFFormItem>, attachments: File[]) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -79,10 +79,12 @@ const CRFFormRenderer: React.FC<ICRFFormRendererProps> = ({
 
   const [formValues, setFormValues] = React.useState<Record<string, any>>(initialState);
   const [errors, setErrors] = React.useState<Record<string, string>>({});
+  const [attachments, setAttachments] = React.useState<File[]>([]);
 
   React.useEffect(() => {
     setFormValues(initialState);
     setErrors({});
+    setAttachments([]);
   }, [initialState]);
 
   const handleChange = React.useCallback((fieldName: string, value: any) => {
@@ -113,7 +115,7 @@ const CRFFormRenderer: React.FC<ICRFFormRendererProps> = ({
     });
 
     payload.Title = formValues.Title;
-    await onSubmit(payload);
+    await onSubmit(payload, attachments);
   };
 
   const renderField = (field: ICRFFieldConfig) => {
@@ -260,6 +262,24 @@ const CRFFormRenderer: React.FC<ICRFFormRendererProps> = ({
           {renderField(field)}
         </div>
       ))}
+      <div className={styles.fullWidth}>
+        <Field label="Attachments">
+          <input
+            type="file"
+            multiple
+            className={styles.nativeFileInput}
+            onChange={(event) => {
+              const target = event.target as HTMLInputElement;
+              setAttachments(target.files ? Array.from(target.files) : []);
+            }}
+          />
+          {attachments.length > 0 && (
+            <Caption1 style={{ color: tokens.colorNeutralForeground3 }}>
+              {attachments.length} file(s): {attachments.map((file) => file.name).join(", ")}
+            </Caption1>
+          )}
+        </Field>
+      </div>
       <div className={styles.formActions}>
         <Button appearance="secondary" onClick={onCancel} type="button" disabled={isSubmitting}>
           Cancel
