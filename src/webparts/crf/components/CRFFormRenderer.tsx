@@ -1,5 +1,9 @@
 import * as React from "react";
 import {
+  Accordion,
+  AccordionHeader,
+  AccordionItem,
+  AccordionPanel,
   Body1Strong,
   Button,
   Caption1,
@@ -24,11 +28,38 @@ import styles from "./Crf.module.scss";
 export interface ICRFFormRendererProps {
   contentType: CRFContentType;
   service: CRFService;
+  isWorkflowOwner: boolean;
   initialValues?: Partial<ICRFFormItem> | null;
   isSubmitting?: boolean;
   onSubmit: (values: Partial<ICRFFormItem>, attachments: File[]) => Promise<void>;
   onCancel: () => void;
 }
+
+const OWNER_ONLY_HIDDEN_FIELDS = new Set([
+  "Expiration_x0020_Date",
+  "Language",
+  "FlowStatus",
+  "Impacted_x0020_Brand",
+  "Division",
+  "Category_x0020_Name",
+  "Comm_x0020_Type",
+  "Submitter",
+  "qs8f",
+  "Status",
+  "Comm_x0020_Owner",
+  "Reason_x0020_for_x0020_error_x00",
+  "Error_x003f_",
+  "Monthly_x0020_Agenda_x003f_",
+]);
+
+const OWNER_ONLY_EDIT_FIELDS = new Set([
+  "Comm_x0020_Status",
+  "Communication_x0020_Vehicle",
+  "Actual_x0020_Publication_x0020_D",
+  "First_x0020_draft_x0020_due_x002",
+  "Final_x0020_approval_x0020_due_x",
+  "Actual_x0020_Fiscal_x0020_Week",
+]);
 
 const defaultValueForField = (field: ICRFFieldConfig, item?: Partial<ICRFFormItem> | null): any => {
   const existing = item?.[field.internalName as keyof ICRFFormItem] as any;
@@ -62,12 +93,21 @@ const defaultValueForField = (field: ICRFFieldConfig, item?: Partial<ICRFFormIte
 const CRFFormRenderer: React.FC<ICRFFormRendererProps> = ({
   contentType,
   service,
+  isWorkflowOwner,
   initialValues,
   isSubmitting,
   onSubmit,
   onCancel,
 }) => {
   const fieldConfigs = React.useMemo(() => CRF_FIELD_MAPPING[contentType] ?? [], [contentType]);
+  const visibleFields = React.useMemo(
+    () => fieldConfigs.filter((field) => !OWNER_ONLY_HIDDEN_FIELDS.has(field.internalName)),
+    [fieldConfigs]
+  );
+  const ownerOnlyFields = React.useMemo(
+    () => fieldConfigs.filter((field) => OWNER_ONLY_HIDDEN_FIELDS.has(field.internalName)),
+    [fieldConfigs]
+  );
   const initialState = React.useMemo(() => {
     const state: Record<string, any> = {};
     fieldConfigs.forEach((field) => {
@@ -111,6 +151,12 @@ const CRFFormRenderer: React.FC<ICRFFormRendererProps> = ({
 
     const payload: Record<string, any> = {};
     fieldConfigs.forEach((field) => {
+      if (!isWorkflowOwner && OWNER_ONLY_HIDDEN_FIELDS.has(field.internalName)) {
+        return;
+      }
+      if (!isWorkflowOwner && OWNER_ONLY_EDIT_FIELDS.has(field.internalName)) {
+        return;
+      }
       payload[field.internalName] = formValues[field.internalName];
     });
 
@@ -118,7 +164,7 @@ const CRFFormRenderer: React.FC<ICRFFormRendererProps> = ({
     await onSubmit(payload, attachments);
   };
 
-  const renderField = (field: ICRFFieldConfig) => {
+  const renderField = (field: ICRFFieldConfig, isReadOnly: boolean) => {
     const value = formValues[field.internalName];
     const error = errors[field.internalName];
 
@@ -132,6 +178,7 @@ const CRFFormRenderer: React.FC<ICRFFormRendererProps> = ({
               resize="vertical"
               className={styles.fullWidth}
               rows={4}
+              disabled={isReadOnly}
             />
           </Field>
         );
@@ -145,6 +192,7 @@ const CRFFormRenderer: React.FC<ICRFFormRendererProps> = ({
                 handleChange(field.internalName, data.selectedOptions);
               }}
               className={styles.fullWidth}
+              disabled={isReadOnly}
             >
               {(field.options ?? []).map((option) => (
                 <Option key={option} value={option}>
@@ -161,6 +209,7 @@ const CRFFormRenderer: React.FC<ICRFFormRendererProps> = ({
               selectedOptions={value ? [value] : []}
               onOptionSelect={(_, data) => handleChange(field.internalName, data.optionValue)}
               className={styles.fullWidth}
+              disabled={isReadOnly}
             >
               {(field.options ?? []).map((option) => (
                 <Option key={option} value={option}>
@@ -186,6 +235,7 @@ const CRFFormRenderer: React.FC<ICRFFormRendererProps> = ({
                   data.value ? new Date(`${data.value}T00:00:00`).toISOString() : null
                 )
               }
+              disabled={isReadOnly}
             />
           </Field>
         );
@@ -195,6 +245,7 @@ const CRFFormRenderer: React.FC<ICRFFormRendererProps> = ({
             <Switch
               checked={Boolean(value)}
               onChange={(_, data) => handleChange(field.internalName, data.checked)}
+              disabled={isReadOnly}
             />
           </Field>
         );
@@ -205,6 +256,7 @@ const CRFFormRenderer: React.FC<ICRFFormRendererProps> = ({
               type="number"
               value={value?.toString() ?? ""}
               onChange={(_, data) => handleChange(field.internalName, data.value ? Number(data.value) : null)}
+              disabled={isReadOnly}
             />
           </Field>
         );
@@ -215,6 +267,7 @@ const CRFFormRenderer: React.FC<ICRFFormRendererProps> = ({
               type="url"
               value={value ?? ""}
               onChange={(_, data) => handleChange(field.internalName, data.value)}
+              disabled={isReadOnly}
             />
           </Field>
         );
@@ -225,6 +278,7 @@ const CRFFormRenderer: React.FC<ICRFFormRendererProps> = ({
             value={value as IUserReference | null}
             onChange={(nextValue) => handleChange(field.internalName, nextValue as IUserReference | null)}
             service={service}
+            disabled={isReadOnly}
           />
         );
       case FieldType.UserMulti:
@@ -235,6 +289,7 @@ const CRFFormRenderer: React.FC<ICRFFormRendererProps> = ({
             onChange={(nextValue) => handleChange(field.internalName, nextValue as IUserReference[] | null)}
             service={service}
             multi
+            disabled={isReadOnly}
           />
         );
       default:
@@ -243,6 +298,7 @@ const CRFFormRenderer: React.FC<ICRFFormRendererProps> = ({
             <Input
               value={value ?? ""}
               onChange={(_, data) => handleChange(field.internalName, data.value)}
+              disabled={isReadOnly}
             />
           </Field>
         );
@@ -257,11 +313,32 @@ const CRFFormRenderer: React.FC<ICRFFormRendererProps> = ({
           Provide as much detail as possible to accelerate approvals.
         </Caption1>
       </div>
-      {fieldConfigs.map((field) => (
+      {visibleFields.map((field) => (
         <div key={field.internalName} className={field.fieldType === FieldType.Note ? styles.fullWidth : undefined}>
-          {renderField(field)}
+          {renderField(field, !isWorkflowOwner && OWNER_ONLY_EDIT_FIELDS.has(field.internalName))}
         </div>
       ))}
+      {isWorkflowOwner && ownerOnlyFields.length > 0 && (
+        <div className={styles.fullWidth}>
+          <Accordion collapsible>
+            <AccordionItem value="workflow-owner-fields">
+              <AccordionHeader>StoreOps Workflow Owners Fields</AccordionHeader>
+              <AccordionPanel>
+                <div className={styles.formGrid}>
+                  {ownerOnlyFields.map((field) => (
+                    <div
+                      key={field.internalName}
+                      className={field.fieldType === FieldType.Note ? styles.fullWidth : undefined}
+                    >
+                      {renderField(field, false)}
+                    </div>
+                  ))}
+                </div>
+              </AccordionPanel>
+            </AccordionItem>
+          </Accordion>
+        </div>
+      )}
       <div className={styles.fullWidth}>
         <Field label="Attachments">
           <input
@@ -296,11 +373,12 @@ interface PeoplePickerFieldProps {
   label: string;
   value?: IUserReference | IUserReference[] | null;
   multi?: boolean;
+  disabled?: boolean;
   onChange: (value: IUserReference | IUserReference[] | null) => void;
   service: CRFService;
 }
 
-const PeoplePickerField: React.FC<PeoplePickerFieldProps> = ({ label, value, multi, onChange, service }) => {
+const PeoplePickerField: React.FC<PeoplePickerFieldProps> = ({ label, value, multi, disabled, onChange, service }) => {
   const [query, setQuery] = React.useState("");
   const [suggestions, setSuggestions] = React.useState<IUserReference[]>([]);
   const [isSearching, setIsSearching] = React.useState(false);
@@ -318,7 +396,7 @@ const PeoplePickerField: React.FC<PeoplePickerFieldProps> = ({ label, value, mul
       window.clearTimeout(debounceRef.current);
     }
 
-    if (!query || query.length < 2) {
+    if (disabled || !query || query.length < 2) {
       setSuggestions([]);
       setIsSearching(false);
       return;
@@ -339,7 +417,7 @@ const PeoplePickerField: React.FC<PeoplePickerFieldProps> = ({ label, value, mul
         window.clearTimeout(debounceRef.current);
       }
     };
-  }, [query, service]);
+  }, [disabled, query, service]);
 
   const addPerson = async (person: IUserReference) => {
     let resolved = person;
@@ -398,13 +476,21 @@ const PeoplePickerField: React.FC<PeoplePickerFieldProps> = ({ label, value, mul
     <Field label={label} className={styles.peoplePickerField}>
       <div className={styles.peoplePickerShell}>
         {selected.length > 0 && (
-          <TagGroup dismissible onDismiss={(_, data) => removePersonByTagValue(String(data.value))}>
+          <TagGroup
+            dismissible={!disabled}
+            onDismiss={(_, data) => {
+              if (disabled) {
+                return;
+              }
+              removePersonByTagValue(String(data.value));
+            }}
+          >
             {selected.map((person) => (
               <Tag
                 key={tagValueForPerson(person)}
                 value={tagValueForPerson(person)}
                 shape="rounded"
-                dismissible
+                dismissible={!disabled}
               >
                 {person.title ?? person.email ?? person.loginName}
               </Tag>
@@ -415,8 +501,9 @@ const PeoplePickerField: React.FC<PeoplePickerFieldProps> = ({ label, value, mul
           value={query}
           onChange={(_, data) => setQuery(data.value)}
           placeholder={selected.length ? "Add another name" : "Search by name or email"}
+          disabled={disabled}
         />
-        {(suggestions.length > 0 || isSearching) && (
+        {!disabled && (suggestions.length > 0 || isSearching) && (
           <div className={styles.peoplePickerSuggestions}>
             {isSearching && (
               <div className={styles.peoplePickerSuggestionRow}>

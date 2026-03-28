@@ -6,6 +6,7 @@ import "@pnp/sp/items";
 import "@pnp/sp/attachments";
 import "@pnp/sp/content-types";
 import "@pnp/sp/site-users/web";
+import "@pnp/sp/site-groups/web";
 import "@pnp/sp/profiles";
 import { ICRFFormItem, IUserReference } from "../models/ICRFFormItem";
 
@@ -30,6 +31,18 @@ export class CRFService {
       .contentTypes.select("Name", "Id/StringValue")();
 
     return types.map((type) => ({ id: type.Id.StringValue, name: type.Name }));
+  }
+
+  public async isCurrentUserInGroup(groupId: number): Promise<boolean> {
+    try {
+      const [currentUser, members] = await Promise.all([
+        this.sp.web.currentUser(),
+        this.sp.web.siteGroups.getById(groupId).users.select("Id")(),
+      ]);
+      return members.some((member: { Id: number }) => member.Id === currentUser.Id);
+    } catch {
+      return false;
+    }
   }
 
   public async getItems(options: ICRFQueryOptions = {}): Promise<ICRFFormItem[]> {
