@@ -134,6 +134,7 @@
 
 .dialogSurface {
   width: min(1100px, 96vw);
+  max-width: 100% !important;
 }
 
 .formGrid {

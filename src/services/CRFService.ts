@@ -2,7 +2,7 @@ import { SPFI } from "@pnp/sp";
 import "@pnp/sp/webs";
 import "@pnp/sp/lists";
 import "@pnp/sp/items";
-import "@pnp/sp/items/get-all";
+//import "@pnp/sp/items/get-all";
 import "@pnp/sp/attachments";
 import "@pnp/sp/content-types";
 import "@pnp/sp/site-users/web";
