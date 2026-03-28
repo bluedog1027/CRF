@@ -72,6 +72,7 @@ const CRFHome: React.FC<CRFHomeProps> = ({ sp }) => {
   const [activeItem, setActiveItem] = React.useState<ICRFFormItem | null>(null);
   const [isFormLoading, setIsFormLoading] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
+  const [isWorkflowOwner, setIsWorkflowOwner] = React.useState(false);
   const [contentTypeMap, setContentTypeMap] = React.useState<Record<string, string>>({});
 
   const toasterId = useId("crf-toaster");
@@ -136,6 +137,24 @@ const CRFHome: React.FC<CRFHomeProps> = ({ sp }) => {
         setError(err.message ?? "Unable to load content types");
       }
     })();
+    return () => {
+      isMounted = false;
+    };
+  }, [service]);
+
+  React.useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const isMember = await service.isCurrentUserInGroup(19);
+        if (!isMounted) return;
+        setIsWorkflowOwner(isMember);
+      } catch {
+        if (!isMounted) return;
+        setIsWorkflowOwner(false);
+      }
+    })();
+
     return () => {
       isMounted = false;
     };
@@ -356,6 +375,7 @@ const CRFHome: React.FC<CRFHomeProps> = ({ sp }) => {
                   <CRFFormRenderer
                     contentType={formState.contentType}
                     service={service}
+                    isWorkflowOwner={isWorkflowOwner}
                     initialValues={formState.mode === "edit" ? activeItem : null}
                     isSubmitting={isSaving}
                     onSubmit={handleFormSubmit}
