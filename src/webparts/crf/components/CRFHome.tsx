@@ -4,11 +4,6 @@ import { SPFI } from "@pnp/sp";
 import {
   Badge,
   Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogSurface,
-  DialogTitle,
   Dropdown,
   FluentProvider,
   MessageBar,
@@ -26,6 +21,7 @@ import {
   webLightTheme,
 } from "@fluentui/react-components";
 import { AddRegular, ArrowClockwiseRegular, EditRegular } from "@fluentui/react-icons";
+import { HashRouter, Navigate, Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { CRFService } from "../../../services/CRFService";
 import { ICRFFormItem } from "../../../models/ICRFFormItem";
 import { CRFContentType } from "../../../models/CRFFieldModel";
@@ -38,15 +34,52 @@ export type CRFHomeProps = {
   theme?: any;
 };
 
-type FormState =
-  | null
-  | { mode: "new"; contentType: CRFContentType }
-  | { mode: "edit"; contentType: CRFContentType; itemId: number };
-
 const COMM_STATUSES = ["Cancelled", "Placeholder", "Pending Draft", "Published"];
 
-const CRFHome: React.FC<CRFHomeProps> = ({ sp }) => {
+type CRFContentTypeSlug = "general" | "marketing" | "transfer" | "qa";
+
+const CONTENT_TYPE_TO_SLUG: Record<CRFContentType, CRFContentTypeSlug> = {
+  [CRFContentType.General]: "general",
+  [CRFContentType.Marketing]: "marketing",
+  [CRFContentType.Transfer]: "transfer",
+  [CRFContentType.QA]: "qa",
+};
+
+const SLUG_TO_CONTENT_TYPE: Record<CRFContentTypeSlug, CRFContentType> = {
+  general: CRFContentType.General,
+  marketing: CRFContentType.Marketing,
+  transfer: CRFContentType.Transfer,
+  qa: CRFContentType.QA,
+};
+
+const resolveContentType = (item?: ICRFFormItem | null): CRFContentType => {
+  const label = item?.ContentType ?? "";
+  switch (label) {
+    case CRFContentType.Marketing:
+      return CRFContentType.Marketing;
+    case CRFContentType.Transfer:
+      return CRFContentType.Transfer;
+    case CRFContentType.QA:
+      return CRFContentType.QA;
+    default:
+      return CRFContentType.General;
+  }
+};
+
+const formatActualPublishDate = (value?: string | null): string => {
+  if (!value) {
+    return "-";
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "-";
+  }
+  return date.toLocaleDateString();
+};
+
+const CRFHomeApp: React.FC<CRFHomeProps> = ({ sp }) => {
   const service = React.useMemo(() => new CRFService(sp), [sp]);
+  const navigate = useNavigate();
   const statusColor = React.useCallback(
     (status?: string): React.ComponentProps<typeof Badge>["color"] => {
       switch (status) {
@@ -64,14 +97,11 @@ const CRFHome: React.FC<CRFHomeProps> = ({ sp }) => {
     },
     []
   );
+
   const [items, setItems] = React.useState<ICRFFormItem[]>([]);
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [error, setError] = React.useState<string | null>(null);
   const [statusFilter, setStatusFilter] = React.useState<string | undefined>(undefined);
-  const [formState, setFormState] = React.useState<FormState>(null);
-  const [activeItem, setActiveItem] = React.useState<ICRFFormItem | null>(null);
-  const [isFormLoading, setIsFormLoading] = React.useState(false);
-  const [isSaving, setIsSaving] = React.useState(false);
   const [isWorkflowOwner, setIsWorkflowOwner] = React.useState(false);
   const [contentTypeMap, setContentTypeMap] = React.useState<Record<string, string>>({});
 
@@ -91,20 +121,6 @@ const CRFHome: React.FC<CRFHomeProps> = ({ sp }) => {
     [dispatchToast]
   );
 
-  const resolveContentType = React.useCallback((item?: ICRFFormItem | null): CRFContentType => {
-    const label = item?.ContentType ?? "";
-    switch (label) {
-      case CRFContentType.Marketing:
-        return CRFContentType.Marketing;
-      case CRFContentType.Transfer:
-        return CRFContentType.Transfer;
-      case CRFContentType.QA:
-        return CRFContentType.QA;
-      default:
-        return CRFContentType.General;
-    }
-  }, []);
-
   const loadItems = React.useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -119,7 +135,7 @@ const CRFHome: React.FC<CRFHomeProps> = ({ sp }) => {
   }, [service, statusFilter]);
 
   React.useEffect(() => {
-    loadItems();
+    void loadItems();
   }, [loadItems]);
 
   React.useEffect(() => {
@@ -154,149 +170,122 @@ const CRFHome: React.FC<CRFHomeProps> = ({ sp }) => {
         setIsWorkflowOwner(false);
       }
     })();
-
     return () => {
       isMounted = false;
     };
   }, [service]);
 
-  const openNewForm = (contentType: CRFContentType) => {
-    setActiveItem(null);
-    setFormState({ mode: "new", contentType });
-  };
-
-  const openEditForm = async (item: ICRFFormItem) => {
-    if (!item.Id) {
-      return;
-    }
-    const ct = resolveContentType(item);
-    setFormState({ mode: "edit", contentType: ct, itemId: item.Id });
-    setIsFormLoading(true);
-    try {
-      const fullItem = await service.getItem(item.Id);
-      setActiveItem(fullItem);
-    } catch (err: any) {
-      setError(err.message ?? "Unable to load the record for editing.");
-      setFormState(null);
-    } finally {
-      setIsFormLoading(false);
-    }
-  };
-
-  const closeForm = () => {
-    setFormState(null);
-    setActiveItem(null);
-    setIsFormLoading(false);
-  };
-
-  const handleFormSubmit = async (values: Partial<ICRFFormItem>, attachments: File[]) => {
-    if (!formState) {
-      return;
-    }
-    setIsSaving(true);
-    try {
-      if (formState.mode === "new") {
-        const payload = { ...values } as Partial<ICRFFormItem>;
-        const contentTypeId = contentTypeMap[formState.contentType];
-        if (contentTypeId) {
-          payload.ContentTypeId = contentTypeId;
-        }
-        const created = await service.createItem(payload as ICRFFormItem);
-        if (created.Id && attachments.length) {
-          await service.addAttachments(created.Id, attachments);
-        }
-        notify("CRF created");
-      } else {
-        await service.updateItem(formState.itemId, values);
-        if (attachments.length) {
-          await service.addAttachments(formState.itemId, attachments);
-        }
-        notify("CRF updated");
+  const createItem = React.useCallback(
+    async (contentType: CRFContentType, values: Partial<ICRFFormItem>, attachments: File[]) => {
+      const payload = { ...values } as Partial<ICRFFormItem>;
+      const contentTypeId = contentTypeMap[contentType];
+      if (contentTypeId) {
+        payload.ContentTypeId = contentTypeId;
       }
-      closeForm();
+
+      const created = await service.createItem(payload as ICRFFormItem);
+      if (created.Id && attachments.length) {
+        await service.addAttachments(created.Id, attachments);
+      }
+      notify("CRF created");
       await loadItems();
-    } catch (err: any) {
-      const message = err.message ?? "Unable to save changes.";
-      setError(message);
-      notify("Save failed", message, "error");
-    } finally {
-      setIsSaving(false);
-    }
-  };
+    },
+    [contentTypeMap, loadItems, notify, service]
+  );
 
-  const formatActualPublishDate = (value?: string | null): string => {
-    if (!value) {
-      return "-";
-    }
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      return "-";
-    }
-    return date.toLocaleDateString();
-  };
-
-  const renderGrid = () => {
-    if (isLoading) {
-      return (
-        <div className={styles.emptyState}>
-          <Spinner label="Loading requests" labelPosition="below" />
-        </div>
-      );
-    }
-
-    if (!items.length) {
-      return (
-        <div className={styles.emptyState}>
-          <Text weight="semibold">No requests match the current filters.</Text>
-        </div>
-      );
-    }
-
-    return (
-      <table className={styles.simpleTable}>
-        <thead>
-          <tr>
-            <th>Project/Event</th>
-            <th>Comm Status</th>
-            <th>Department</th>
-            <th>Actual publish date</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((item) => (
-            <tr key={item.Id}>
-              <td>{item.Title}</td>
-              <td>
-                {item.Comm_x0020_Status ? (
-                  <Badge style={{padding: 15}} appearance="filled" color={statusColor(item.Comm_x0020_Status)}>
-                    {item.Comm_x0020_Status}
-                  </Badge>
-                ) : (
-                  "-"
-                )}
-              </td>
-              <td>{item.Department ?? "-"}</td>
-              <td>{formatActualPublishDate(item.Actual_x0020_Publication_x0020_D)}</td>
-              <td>
-                <div className={styles.actionsCell}>
-                  <Button
-                    icon={<EditRegular />}
-                    appearance="subtle"
-                    onClick={() => openEditForm(item)}
-                  />
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    );
-  };
+  const updateItem = React.useCallback(
+    async (itemId: number, values: Partial<ICRFFormItem>, attachments: File[]) => {
+      await service.updateItem(itemId, values);
+      if (attachments.length) {
+        await service.addAttachments(itemId, attachments);
+      }
+      notify("CRF updated");
+      await loadItems();
+    },
+    [loadItems, notify, service]
+  );
 
   return (
     <FluentProvider theme={webLightTheme} className={styles.crf}>
       <Toaster toasterId={toasterId} />
+      {error && (
+        <MessageBar intent="error">
+          <MessageBarBody>
+            <MessageBarTitle>{error}</MessageBarTitle>
+          </MessageBarBody>
+          <Button appearance="transparent" onClick={() => setError(null)}>
+            Dismiss
+          </Button>
+        </MessageBar>
+      )}
+
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <CRFListScreen
+              items={items}
+              isLoading={isLoading}
+              statusFilter={statusFilter}
+              onStatusFilterChange={setStatusFilter}
+              onRefresh={loadItems}
+              onEdit={(itemId) => navigate(`/edit/${itemId}`)}
+              onCreate={(contentType) => navigate(`/new/${CONTENT_TYPE_TO_SLUG[contentType]}`)}
+              statusColor={statusColor}
+            />
+          }
+        />
+        <Route
+          path="/new/:contentTypeSlug"
+          element={
+            <CRFNewFormScreen
+              service={service}
+              isWorkflowOwner={isWorkflowOwner}
+              onSubmit={createItem}
+              onCancel={() => navigate("/")}
+            />
+          }
+        />
+        <Route
+          path="/edit/:itemId"
+          element={
+            <CRFEditFormScreen
+              service={service}
+              isWorkflowOwner={isWorkflowOwner}
+              onSubmit={updateItem}
+              onCancel={() => navigate("/")}
+            />
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </FluentProvider>
+  );
+};
+
+type CRFListScreenProps = {
+  items: ICRFFormItem[];
+  isLoading: boolean;
+  statusFilter?: string;
+  onStatusFilterChange: (status: string | undefined) => void;
+  onRefresh: () => Promise<void>;
+  onEdit: (itemId: number) => void;
+  onCreate: (contentType: CRFContentType) => void;
+  statusColor: (status?: string) => React.ComponentProps<typeof Badge>["color"];
+};
+
+const CRFListScreen: React.FC<CRFListScreenProps> = ({
+  items,
+  isLoading,
+  statusFilter,
+  onStatusFilterChange,
+  onRefresh,
+  onEdit,
+  onCreate,
+  statusColor,
+}) => {
+  return (
+    <>
       <div className={styles.toolbar}>
         <div className={styles.newButtons}>
           {Object.values(CRFContentType).map((contentType) => (
@@ -304,7 +293,7 @@ const CRFHome: React.FC<CRFHomeProps> = ({ sp }) => {
               key={contentType}
               appearance="primary"
               icon={<AddRegular />}
-              onClick={() => openNewForm(contentType)}
+              onClick={() => onCreate(contentType)}
             >
               New {contentType.replace("CRF ", "")}
             </Button>
@@ -317,7 +306,7 @@ const CRFHome: React.FC<CRFHomeProps> = ({ sp }) => {
             selectedOptions={statusFilter ? [statusFilter] : []}
             onOptionSelect={(_, data) => {
               const value = data.optionValue;
-              setStatusFilter(value === "All" ? undefined : value);
+              onStatusFilterChange(value === "All" ? undefined : value);
             }}
           >
             <Option key="all" value="All">
@@ -329,66 +318,188 @@ const CRFHome: React.FC<CRFHomeProps> = ({ sp }) => {
               </Option>
             ))}
           </Dropdown>
-          <Button
-            appearance="secondary"
-            icon={<ArrowClockwiseRegular />}
-            onClick={loadItems}
-          >
+          <Button appearance="secondary" icon={<ArrowClockwiseRegular />} onClick={() => void onRefresh()}>
             Refresh
           </Button>
         </div>
       </div>
 
-      {error && (
-        <MessageBar intent="error">
-          <MessageBarBody>
-            <MessageBarTitle>{error}</MessageBarTitle>
-          </MessageBarBody>
-          <Button appearance="transparent" onClick={() => setError(null)}>
-            Dismiss
-          </Button>
-        </MessageBar>
-      )}
+      <div className={styles.dataGridWrapper}>
+        {isLoading ? (
+          <div className={styles.emptyState}>
+            <Spinner label="Loading requests" labelPosition="below" />
+          </div>
+        ) : !items.length ? (
+          <div className={styles.emptyState}>
+            <Text weight="semibold">No requests match the current filters.</Text>
+          </div>
+        ) : (
+          <table className={styles.simpleTable}>
+            <thead>
+              <tr>
+                <th>Project/Event</th>
+                <th>Comm Status</th>
+                <th>Department</th>
+                <th>Actual publish date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((item) => (
+                <tr key={item.Id}>
+                  <td>{item.Title}</td>
+                  <td>
+                    {item.Comm_x0020_Status ? (
+                      <Badge appearance="filled" color={statusColor(item.Comm_x0020_Status)}>
+                        {item.Comm_x0020_Status}
+                      </Badge>
+                    ) : (
+                      "-"
+                    )}
+                  </td>
+                  <td>{item.Department ?? "-"}</td>
+                  <td>{formatActualPublishDate(item.Actual_x0020_Publication_x0020_D)}</td>
+                  <td>
+                    <div className={styles.actionsCell}>
+                      <Button
+                        icon={<EditRegular />}
+                        appearance="subtle"
+                        onClick={() => item.Id && onEdit(item.Id)}
+                      />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </>
+  );
+};
 
-      <div className={styles.dataGridWrapper}>{renderGrid()}</div>
+type CRFNewFormScreenProps = {
+  service: CRFService;
+  isWorkflowOwner: boolean;
+  onSubmit: (contentType: CRFContentType, values: Partial<ICRFFormItem>, attachments: File[]) => Promise<void>;
+  onCancel: () => void;
+};
 
-      <Dialog
-        open={Boolean(formState)}
-        onOpenChange={(_, data) => {
-          if (!data.open) {
-            closeForm();
+const CRFNewFormScreen: React.FC<CRFNewFormScreenProps> = ({ service, isWorkflowOwner, onSubmit, onCancel }) => {
+  const params = useParams<{ contentTypeSlug: string }>();
+  const slug = params.contentTypeSlug as CRFContentTypeSlug | undefined;
+  const contentType = slug && SLUG_TO_CONTENT_TYPE[slug];
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  if (!contentType) {
+    return <Navigate to="/" replace />;
+  }
+
+  return (
+    <div className={styles.dataGridWrapper}>
+      <Text weight="semibold">New {contentType}</Text>
+      <CRFFormRenderer
+        contentType={contentType}
+        service={service}
+        isWorkflowOwner={isWorkflowOwner}
+        initialValues={null}
+        isSubmitting={isSubmitting}
+        onSubmit={async (values, attachments) => {
+          setIsSubmitting(true);
+          try {
+            await onSubmit(contentType, values, attachments);
+            onCancel();
+          } finally {
+            setIsSubmitting(false);
           }
         }}
-      >
-        <DialogSurface className={styles.dialogSurface}>
-          <DialogBody>
-            <DialogTitle>
-              {formState?.mode === "edit" ? "Edit" : "New"} {formState?.contentType ?? "CRF"}
-            </DialogTitle>
-            <DialogContent>
-              {isFormLoading ? (
-                <div className={styles.emptyState}>
-                  <Spinner label="Loading form" labelPosition="below" />
-                </div>
-              ) : (
-                formState && (
-                  <CRFFormRenderer
-                    contentType={formState.contentType}
-                    service={service}
-                    isWorkflowOwner={isWorkflowOwner}
-                    initialValues={formState.mode === "edit" ? activeItem : null}
-                    isSubmitting={isSaving}
-                    onSubmit={handleFormSubmit}
-                    onCancel={closeForm}
-                  />
-                )
-              )}
-            </DialogContent>
-          </DialogBody>
-        </DialogSurface>
-      </Dialog>
+        onCancel={onCancel}
+      />
+    </div>
+  );
+};
 
-    </FluentProvider>
+type CRFEditFormScreenProps = {
+  service: CRFService;
+  isWorkflowOwner: boolean;
+  onSubmit: (itemId: number, values: Partial<ICRFFormItem>, attachments: File[]) => Promise<void>;
+  onCancel: () => void;
+};
+
+const CRFEditFormScreen: React.FC<CRFEditFormScreenProps> = ({ service, isWorkflowOwner, onSubmit, onCancel }) => {
+  const params = useParams<{ itemId: string }>();
+  const itemId = Number(params.itemId);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [item, setItem] = React.useState<ICRFFormItem | null>(null);
+
+  React.useEffect(() => {
+    if (!Number.isFinite(itemId)) {
+      setIsLoading(false);
+      return;
+    }
+    let isMounted = true;
+    (async () => {
+      try {
+        const fullItem = await service.getItem(itemId);
+        if (!isMounted) return;
+        setItem(fullItem);
+      } finally {
+        if (!isMounted) return;
+        setIsLoading(false);
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, [itemId, service]);
+
+  if (!Number.isFinite(itemId)) {
+    return <Navigate to="/" replace />;
+  }
+
+  return (
+    <div className={styles.dataGridWrapper}>
+      {isLoading ? (
+        <div className={styles.emptyState}>
+          <Spinner label="Loading form" labelPosition="below" />
+        </div>
+      ) : !item ? (
+        <div className={styles.emptyState}>
+          <Text weight="semibold">Unable to load the selected record.</Text>
+          <Button onClick={onCancel}>Back</Button>
+        </div>
+      ) : (
+        <>
+          <Text weight="semibold">Edit {resolveContentType(item)}</Text>
+          <CRFFormRenderer
+            contentType={resolveContentType(item)}
+            service={service}
+            isWorkflowOwner={isWorkflowOwner}
+            initialValues={item}
+            isSubmitting={isSubmitting}
+            onSubmit={async (values, attachments) => {
+              setIsSubmitting(true);
+              try {
+                await onSubmit(itemId, values, attachments);
+                onCancel();
+              } finally {
+                setIsSubmitting(false);
+              }
+            }}
+            onCancel={onCancel}
+          />
+        </>
+      )}
+    </div>
+  );
+};
+
+const CRFHome: React.FC<CRFHomeProps> = (props) => {
+  return (
+    <HashRouter>
+      <CRFHomeApp {...props} />
+    </HashRouter>
   );
 };
 
