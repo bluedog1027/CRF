@@ -31,7 +31,7 @@ import { ICRFFormItem } from "../../../models/ICRFFormItem";
 import { CRFContentType } from "../../../models/CRFFieldModel";
 import CRFFormRenderer from "./CRFFormRenderer";
 import styles from "./Crf.module.scss";
-
+//https://cplace.sharepoint.com/sites/Workflows/StoreOps/SitePages/CRFTest.aspx?debug=true&noredir=true&debugManifestsFile=https%3A%2F%2Flocalhost%3A4321%2Ftemp%2Fmanifests.js
 export type CRFHomeProps = {
   sp: SPFI;
   context: WebPartContext;
