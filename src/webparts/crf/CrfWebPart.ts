@@ -5,15 +5,18 @@ import { BaseClientSideWebPart, IPropertyPaneConfiguration } from "@microsoft/sp
 import { IReadonlyTheme } from "@microsoft/sp-component-base";
 import { spfi, SPFx, SPFI } from "@pnp/sp";
 import CRFHome from "./components/CRFHome";
+import HttpClientService from '../../services/HttpClientService';
 
 export interface ICRFWebPartProps {}
 
 export default class CRFWebPart extends BaseClientSideWebPart<ICRFWebPartProps> {
   private _sp: SPFI;
   private _themeVariant?: IReadonlyTheme;
+  private httpService: HttpClientService;
 
   protected async onInit(): Promise<void> {
     await super.onInit();
+    this.httpService = await HttpClientService.create(this.context);
     this._sp = spfi().using(SPFx(this.context));
   }
 
@@ -22,6 +25,7 @@ export default class CRFWebPart extends BaseClientSideWebPart<ICRFWebPartProps> 
       sp: this._sp,
       context: this.context,
       theme: this._themeVariant,
+      httpService: this.httpService
     });
 
     ReactDom.render(element, this.domElement);

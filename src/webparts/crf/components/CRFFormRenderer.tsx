@@ -11,19 +11,22 @@ import {
   Field,
   Input,
   Option,
-  Spinner,
   Switch,
-  Tag,
-  TagGroup,
   Textarea,
   tokens,
 } from "@fluentui/react-components";
+import { PeoplePicker, PrincipalType, IPeoplePickerContext } from "@pnp/spfx-controls-react/lib/PeoplePicker";
 import { CRF_FIELD_MAPPING } from "../../../config/CRFFieldMapping";
 import { CRFContentType, ICRFFieldConfig } from "../../../models/CRFFieldModel";
 import { FieldType } from "../../../models/FieldType";
 import { ICRFFormItem, IUserReference } from "../../../models/ICRFFormItem";
 import { CRFService } from "../../../services/CRFService";
 import styles from "./Crf.module.scss";
+import { WebPartContext } from "@microsoft/sp-webpart-base";
+import CRApprovals from "./CRApprovals";
+import { Stack } from "@fluentui/react/lib/Stack";
+import { _createSPListItem, isFalsy } from "../../../services/Util";
+import { ISPApprovalIDS } from "../../../models/ApprovalModel";
 
 export interface ICRFFormRendererProps {
   contentType: CRFContentType;
@@ -31,6 +34,7 @@ export interface ICRFFormRendererProps {
   isWorkflowOwner: boolean;
   initialValues?: Partial<ICRFFormItem> | null;
   isSubmitting?: boolean;
+  context: WebPartContext;
   onSubmit: (values: Partial<ICRFFormItem>, attachments: File[]) => Promise<void>;
   onCancel: () => void;
 }
@@ -50,6 +54,9 @@ const OWNER_ONLY_HIDDEN_FIELDS = new Set([
   "Reason_x0020_for_x0020_error_x00",
   "Error_x003f_",
   "Monthly_x0020_Agenda_x003f_",
+  "Approval_x0020_Lock",
+  "Sign_x002d_off_x0020_status",
+  "CRF_x0020_Approval_x0020_WF_x002"
 ]);
 
 const OWNER_ONLY_EDIT_FIELDS = new Set([
@@ -96,6 +103,7 @@ const CRFFormRenderer: React.FC<ICRFFormRendererProps> = ({
   isWorkflowOwner,
   initialValues,
   isSubmitting,
+  context,
   onSubmit,
   onCancel,
 }) => {
@@ -120,6 +128,11 @@ const CRFFormRenderer: React.FC<ICRFFormRendererProps> = ({
   const [formValues, setFormValues] = React.useState<Record<string, any>>(initialState);
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [attachments, setAttachments] = React.useState<File[]>([]);
+  const peoplePickerContext: IPeoplePickerContext = {
+    absoluteUrl: "https://cplace.sharepoint.com/sites/workflows/storeops",
+    msGraphClientFactory: context.msGraphClientFactory as any,
+    spHttpClient: context.spHttpClient as any
+  };
 
   React.useEffect(() => {
     setFormValues(initialState);
@@ -134,6 +147,19 @@ const CRFFormRenderer: React.FC<ICRFFormRendererProps> = ({
     }));
   }, []);
 
+  const createApproval = React.useCallback(() => {
+       const body:Partial<ISPApprovalIDS> = {
+          __metadata : {
+            type: 'SP.Data.CRFApprovalsListItem'
+          },
+          Title: initialValues?.Title,
+          RequestFromID: initialValues?.Id?.toString()
+       }
+      _createSPListItem<ISPApprovalIDS>(context.spHttpClient, `${context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('CRFApprovals')/items`, JSON.stringify(body))
+      .then(data => console.log(data))
+      .catch(error => console.log(error));
+  }, [])
+
   const validate = React.useCallback(() => {
     const nextErrors: Record<string, string> = {};
     if (!formValues.Title || !formValues.Title.trim()) {
@@ -143,7 +169,7 @@ const CRFFormRenderer: React.FC<ICRFFormRendererProps> = ({
     return Object.keys(nextErrors).length === 0;
   }, [formValues.Title]);
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent):Promise<void> => {
     event.preventDefault();
     if (!validate()) {
       return;
@@ -164,7 +190,7 @@ const CRFFormRenderer: React.FC<ICRFFormRendererProps> = ({
     await onSubmit(payload, attachments);
   };
 
-  const renderField = (field: ICRFFieldConfig, isReadOnly: boolean) => {
+  const renderField = (field: ICRFFieldConfig, isReadOnly: boolean) : JSX.Element => {
     const value = formValues[field.internalName];
     const error = errors[field.internalName];
 
@@ -188,10 +214,12 @@ const CRFFormRenderer: React.FC<ICRFFormRendererProps> = ({
             <Dropdown
               multiselect
               selectedOptions={Array.isArray(value) ? value : []}
+              value={Array.isArray(value) ? value.toString() : ''}
+              inlinePopup
               onOptionSelect={(_, data) => {
                 handleChange(field.internalName, data.selectedOptions);
               }}
-              className={styles.fullWidth}
+              //className={styles.fullWidth}
               disabled={isReadOnly}
             >
               {(field.options ?? []).map((option) => (
@@ -206,9 +234,11 @@ const CRFFormRenderer: React.FC<ICRFFormRendererProps> = ({
         return (
           <Field label={field.displayName}>
             <Dropdown
+              inlinePopup
               selectedOptions={value ? [value] : []}
+              value={value.toString() ?? ''}
               onOptionSelect={(_, data) => handleChange(field.internalName, data.optionValue)}
-              className={styles.fullWidth}
+              //className={styles.fullWidth}
               disabled={isReadOnly}
             >
               {(field.options ?? []).map((option) => (
@@ -273,22 +303,29 @@ const CRFFormRenderer: React.FC<ICRFFormRendererProps> = ({
         );
       case FieldType.User:
         return (
-          <PeoplePickerField
-            label={field.displayName}
-            value={value as IUserReference | null}
-            onChange={(nextValue) => handleChange(field.internalName, nextValue as IUserReference | null)}
-            service={service}
+          <PeoplePicker
+            context={peoplePickerContext as any}
+            titleText={field.displayName}
+            personSelectionLimit={1}
+            principalTypes={[PrincipalType.User]}
+            resolveDelay={300}
+            defaultSelectedUsers={value ? value.secondaryText : undefined}
+            onChange={(nextValue) => handleChange(field.internalName, nextValue as IUserReference[] | null)}
             disabled={isReadOnly}
           />
         );
       case FieldType.UserMulti:
+        console.log(value);
         return (
-          <PeoplePickerField
-            label={field.displayName}
-            value={value as IUserReference[] | null}
+          <PeoplePicker
+            context={peoplePickerContext as any}
+            titleText={field.displayName}
+            personSelectionLimit={10}
+            ensureUser={true}
+            principalTypes={[PrincipalType.User]}
+            resolveDelay={300}
+            defaultSelectedUsers={value ? value.map((person:any) => person.secondaryText) : ['']}
             onChange={(nextValue) => handleChange(field.internalName, nextValue as IUserReference[] | null)}
-            service={service}
-            multi
             disabled={isReadOnly}
           />
         );
@@ -306,226 +343,70 @@ const CRFFormRenderer: React.FC<ICRFFormRendererProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className={styles.formGrid}>
-      <div className={styles.fullWidth}>
-        <Body1Strong>Required fields</Body1Strong>
-        <Caption1 style={{ color: tokens.colorNeutralForeground3 }}>
-          Provide as much detail as possible to accelerate approvals.
-        </Caption1>
-      </div>
-      {visibleFields.map((field) => (
-        <div key={field.internalName} className={field.fieldType === FieldType.Note ? styles.fullWidth : undefined}>
-          {renderField(field, !isWorkflowOwner && OWNER_ONLY_EDIT_FIELDS.has(field.internalName))}
-        </div>
-      ))}
-      {isWorkflowOwner && ownerOnlyFields.length > 0 && (
+    <Stack tokens={{childrenGap: 10}}>
+      <form onSubmit={handleSubmit} className={styles.formGrid}>
         <div className={styles.fullWidth}>
-          <Accordion collapsible>
-            <AccordionItem value="workflow-owner-fields">
-              <AccordionHeader>StoreOps Workflow Owners Fields</AccordionHeader>
-              <AccordionPanel>
-                <div className={styles.formGrid}>
-                  {ownerOnlyFields.map((field) => (
-                    <div
-                      key={field.internalName}
-                      className={field.fieldType === FieldType.Note ? styles.fullWidth : undefined}
-                    >
-                      {renderField(field, false)}
-                    </div>
-                  ))}
-                </div>
-              </AccordionPanel>
-            </AccordionItem>
-          </Accordion>
+          <Body1Strong>Required fields </Body1Strong>
+          <Caption1 style={{ color: tokens.colorNeutralForeground3 }}>
+            Provide as much detail as possible to accelerate approvals.
+          </Caption1>
         </div>
-      )}
-      <div className={styles.fullWidth}>
-        <Field label="Attachments">
-          <input
-            type="file"
-            multiple
-            className={styles.nativeFileInput}
-            onChange={(event) => {
-              const target = event.target as HTMLInputElement;
-              setAttachments(target.files ? Array.from(target.files) : []);
-            }}
-          />
-          {attachments.length > 0 && (
-            <Caption1 style={{ color: tokens.colorNeutralForeground3 }}>
-              {attachments.length} file(s): {attachments.map((file) => file.name).join(", ")}
-            </Caption1>
-          )}
-        </Field>
-      </div>
-      <div className={styles.formActions}>
-        <Button appearance="secondary" onClick={onCancel} type="button" disabled={isSubmitting}>
-          Cancel
-        </Button>
-        <Button appearance="primary" type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Saving..." : "Save"}
-        </Button>
-      </div>
-    </form>
-  );
-};
-
-interface PeoplePickerFieldProps {
-  label: string;
-  value?: IUserReference | IUserReference[] | null;
-  multi?: boolean;
-  disabled?: boolean;
-  onChange: (value: IUserReference | IUserReference[] | null) => void;
-  service: CRFService;
-}
-
-const PeoplePickerField: React.FC<PeoplePickerFieldProps> = ({ label, value, multi, disabled, onChange, service }) => {
-  const [query, setQuery] = React.useState("");
-  const [suggestions, setSuggestions] = React.useState<IUserReference[]>([]);
-  const [isSearching, setIsSearching] = React.useState(false);
-  const debounceRef = React.useRef<number>();
-
-  const selected = React.useMemo(() => {
-    if (multi) {
-      return Array.isArray(value) ? value : [];
-    }
-    return value ? [value as IUserReference] : [];
-  }, [value, multi]);
-
-  React.useEffect(() => {
-    if (debounceRef.current) {
-      window.clearTimeout(debounceRef.current);
-    }
-
-    if (disabled || !query || query.length < 2) {
-      setSuggestions([]);
-      setIsSearching(false);
-      return;
-    }
-
-    setIsSearching(true);
-    debounceRef.current = window.setTimeout(async () => {
-      try {
-        const results = await service.searchUsers(query);
-        setSuggestions(results);
-      } finally {
-        setIsSearching(false);
-      }
-    }, 300);
-
-    return () => {
-      if (debounceRef.current) {
-        window.clearTimeout(debounceRef.current);
-      }
-    };
-  }, [disabled, query, service]);
-
-  const addPerson = async (person: IUserReference) => {
-    let resolved = person;
-    if (!resolved.id && resolved.loginName) {
-      resolved = await service.ensureUser(resolved.loginName);
-    }
-
-    if (multi) {
-      const alreadySelected = selected.some((entry) => entry.id === resolved.id);
-      if (!alreadySelected) {
-        onChange([...selected, resolved]);
-      }
-    } else {
-      onChange(resolved);
-    }
-
-    setQuery("");
-    setSuggestions([]);
-  };
-
-  const tagValueForPerson = (person: IUserReference): string => {
-    if (typeof person.id === "number") {
-      return `id:${person.id}`;
-    }
-    if (person.loginName) {
-      return `login:${person.loginName}`;
-    }
-    return `label:${person.email ?? person.title ?? ""}`;
-  };
-
-  const removePersonByTagValue = (tagValue: string) => {
-    if (!tagValue) {
-      onChange(multi ? [] : null);
-      return;
-    }
-
-    const [kind, valuePart] = tagValue.split(":", 2);
-    if (multi) {
-      const next = selected.filter((entry) => {
-        if (kind === "id") {
-          return `${entry.id ?? ""}` !== valuePart;
-        }
-        if (kind === "login") {
-          return (entry.loginName ?? "") !== valuePart;
-        }
-        const label = entry.email ?? entry.title ?? "";
-        return label !== valuePart;
-      });
-      onChange(next);
-    } else {
-      onChange(null);
-    }
-  };
-
-  return (
-    <Field label={label} className={styles.peoplePickerField}>
-      <div className={styles.peoplePickerShell}>
-        {selected.length > 0 && (
-          <TagGroup
-            dismissible={!disabled}
-            onDismiss={(_, data) => {
-              if (disabled) {
-                return;
-              }
-              removePersonByTagValue(String(data.value));
-            }}
-          >
-            {selected.map((person) => (
-              <Tag
-                key={tagValueForPerson(person)}
-                value={tagValueForPerson(person)}
-                shape="rounded"
-                dismissible={!disabled}
-              >
-                {person.title ?? person.email ?? person.loginName}
-              </Tag>
-            ))}
-          </TagGroup>
-        )}
-        <Input
-          value={query}
-          onChange={(_, data) => setQuery(data.value)}
-          placeholder={selected.length ? "Add another name" : "Search by name or email"}
-          disabled={disabled}
-        />
-        {!disabled && (suggestions.length > 0 || isSearching) && (
-          <div className={styles.peoplePickerSuggestions}>
-            {isSearching && (
-              <div className={styles.peoplePickerSuggestionRow}>
-                <Spinner size="tiny" label="Searching" labelPosition="after" />
-              </div>
-            )}
-            {suggestions.map((option) => (
-              <button
-                key={option.loginName ?? option.id}
-                type="button"
-                className={styles.peoplePickerSuggestionRow}
-                onMouseDown={(event) => event.preventDefault()}
-                onClick={() => addPerson(option)}
-              >
-                <div className={styles.peoplePickerSuggestionPrimary}>{option.title ?? option.loginName}</div>
-                <div className={styles.peoplePickerSuggestionSecondary}>{option.email}</div>
-              </button>
-            ))}
+        {visibleFields.map((field) => (
+          <div key={field.internalName} className={field.fieldType === FieldType.Note ? styles.fullWidth : undefined}>
+            {renderField(field, !isWorkflowOwner && OWNER_ONLY_EDIT_FIELDS.has(field.internalName))}
+          </div>
+        ))}
+        {isWorkflowOwner && ownerOnlyFields.length > 0 && (
+          <div className={styles.fullWidth}>
+            <Accordion collapsible>
+              <AccordionItem value="workflow-owner-fields">
+                <AccordionHeader>StoreOps Workflow Owners Fields</AccordionHeader>
+                <AccordionPanel>
+                  <div className={styles.formGrid}>
+                    {ownerOnlyFields.map((field) => (
+                      <div
+                        key={field.internalName}
+                        className={field.fieldType === FieldType.Note ? styles.fullWidth : undefined}
+                      >
+                        {renderField(field, false)}
+                      </div>
+                    ))}
+                  </div>
+                </AccordionPanel>
+              </AccordionItem>
+            </Accordion>
           </div>
         )}
-      </div>
-    </Field>
+        <div className={styles.fullWidth}>
+          <Field label="Attachments">
+            <input
+              type="file"
+              multiple
+              className={styles.nativeFileInput}
+              onChange={(event) => {
+                const target = event.target as HTMLInputElement;
+                setAttachments(target.files ? Array.from(target.files) : []);
+              }}
+            />
+            {attachments.length > 0 && (
+              <Caption1 style={{ color: tokens.colorNeutralForeground3 }}>
+                {attachments.length} file(s): {attachments.map((file) => file.name).join(", ")}
+              </Caption1>
+            )}
+          </Field>
+        </div>
+        <div className={styles.formActions}>
+          <Button appearance="secondary" onClick={onCancel} type="button" disabled={isSubmitting}>
+            Cancel
+          </Button>
+          <Button appearance="primary" type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Saving..." : "Save"}
+          </Button>
+          {!isFalsy(initialValues?.Id) && isWorkflowOwner && <Button appearance="primary" color="purple" onClick={createApproval} >Send Approval</Button>}
+        </div>
+      </form>
+      <CRApprovals displayType="Tab" IDPK={initialValues?.Id} ctx={context} />
+    </Stack>
   );
 };
 

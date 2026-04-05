@@ -9,6 +9,8 @@ import "@pnp/sp/site-users/web";
 import "@pnp/sp/site-groups/web";
 import "@pnp/sp/profiles";
 import { ICRFFormItem, IUserReference } from "../models/ICRFFormItem";
+import { _createSPListItem, _updateSPList } from "./Util";
+import { SPHttpClient } from '@microsoft/sp-http';
 
 export interface ICRFQueryOptions {
   searchText?: string;
@@ -23,7 +25,7 @@ const STORE_OPS_FIELD = "Who_x0020_in_x0020_Store_x0020_O";
 export class CRFService {
   private readonly listName = "CRF";
 
-  constructor(private sp: SPFI) {}
+  constructor(private sp: SPFI) { }
 
   public async getContentTypes(): Promise<{ id: string; name: string }[]> {
     const types = await this.sp.web.lists
@@ -120,15 +122,42 @@ export class CRFService {
     return this.mapItem(item);
   }
 
-  public async createItem(payload: ICRFFormItem): Promise<ICRFFormItem> {
+  public async createItem(ctx: SPHttpClient, payload: ICRFFormItem): Promise<ICRFFormItem> {
     const body = this.normalizePayload(payload);
-    const { data } = await this.sp.web.lists.getByTitle(this.listName).items.add(body);
+    console.log(body);
+    const bodyTwo = {
+      "__metadata": {
+        "type": "SP.Data.CRFListItem"
+      },
+      "Title": "et",
+      "Department": "Internal Audit",
+      "Stores_x0020_or_x0020_Channels_x": { "results": [
+        "ALL US (including HI & PR)",
+        "ALL CAN (including Quebec French)"
+      ]},
+      "Desired_x0020_Publish_x0020_Date": "2026-04-06T04:00:00.000Z",
+      "Effective_x0020_Date": "2026-04-10T04:00:00.000Z",
+      "Effective_x0020_Fiscal_x0020_Wee": 12,
+      "Are_x0020_resources_x0020_availa": "Yes",
+      "Will_x0020_materials_x0020_be_x0": "No",
+      "Are_x0020_materials_x0020_re_x00": "Yes",
+      "Who_x0020_can_x0020_stores_x002f": "etaylor",
+      "Effective_x0020_End_x0020_Date": "2026-04-22T04:00:00.000Z",
+      "Scope_x0020_of_x0020_Project": "test ",
+      "Management_x0020_Visibility": "HQ",
+      "Who_x0020_in_x0020_Store_x0020_OId": { 'results': [17,42] },
+      "ContentTypeId": "0x0100EF7710CF532A7C409077AE3B5E447A3D"
+    }
+    console.log(bodyTwo);
+    const data = await _createSPListItem(ctx, `https://cplace.sharepoint.com/sites/Workflows/StoreOps/_api/web/lists/getbytitle('CRF')/items`, JSON.stringify(body));
+    //const { data } = await this.sp.web.lists.getByTitle(this.listName).items.add(body);
     return this.mapItem(data);
   }
 
-  public async updateItem(id: number, payload: Partial<ICRFFormItem>): Promise<void> {
+  public async updateItem(ctx: SPHttpClient, id: number, payload: Partial<ICRFFormItem>): Promise<void> {
     const body = this.normalizePayload(payload);
-    await this.sp.web.lists.getByTitle(this.listName).items.getById(id).update(body);
+    await _updateSPList(ctx,`https://cplace.sharepoint.com/sites/Workflows/StoreOps/_api/web/lists/getbytitle('CRF')/items(${id})`,JSON.stringify(body))
+    //await this.sp.web.lists.getByTitle(this.listName).items.getById(id).update(body);
   }
 
   public async addAttachments(itemId: number, files: File[]): Promise<void> {
@@ -147,10 +176,16 @@ export class CRFService {
     await this.sp.web.lists.getByTitle(this.listName).items.getById(id).delete();
   }
 
-  private normalizePayload(payload: Partial<ICRFFormItem>): Record<string, any> {
-    const body: Record<string, any> = {};
+  private normalizePayload(payload: Partial<ICRFFormItem>): Partial<ICRFFormItem> {
+    const body: Partial<ICRFFormItem> = {
+      "__metadata": { type: 'SP.Data.CRFListItem' }
+    };
     Object.entries(payload).forEach(([key, value]) => {
       if (value === undefined) {
+        return;
+      }
+
+      if(Array.isArray(value) && value.length === 0){
         return;
       }
 
@@ -160,9 +195,9 @@ export class CRFService {
           const ids = entries
             .map((entry: any) => entry?.id)
             .filter((id: unknown): id is number => typeof id === "number");
-          body[`${key}Id`] = { results: ids };
+            body[`${key}Id`] = { 'results': ids };
         } else {
-          body[key] = { results: value };
+          body[key] = { 'results': value };
         }
       } else if (
         typeof value === "object" &&
@@ -208,8 +243,8 @@ export class CRFService {
     const data: any = ensured;
     return {
       id: data.Id ?? data.data?.Id,
-      title: data.Title ?? data.data?.Title,
-      email: data.Email ?? data.data?.Email,
+      text: data.Title ?? data.data?.Title,
+      secondaryText: data.Email ?? data.data?.Email,
       loginName: data.LoginName ?? data.data?.LoginName,
     };
   }
@@ -237,8 +272,8 @@ export class CRFService {
 
     return {
       id: user.Id ?? user.id,
-      title: user.Title ?? user.title ?? user.DisplayText,
-      email: user.EMail ?? user.Email ?? user.Description,
+      text: user.Title ?? user.title ?? user.DisplayText,
+      secondaryText: user.EMail ?? user.Email ?? user.Description,
       loginName: user.LoginName ?? user.loginName,
     };
   }

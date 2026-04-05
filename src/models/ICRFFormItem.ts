@@ -1,11 +1,19 @@
 export interface IUserReference {
   id?: number;
-  title?: string;
-  email?: string;
+  text?: string;
+  secondaryText?: string;
   loginName?: string;
 }
 
+/** Sharepoint List Item object name. This is needed in the body for Create, Update and Delete  
+ * @example Contracts is string SP.Data.ContractsListItem
+*/
+type listItemName = {
+  type: string;
+}
+
 export interface ICRFFormItem {
+  '__metadata'?: listItemName;
   Id?: number;
   Title: string;
   ContentType?: string;
@@ -82,4 +90,5 @@ export interface ICRFFormItem {
   qs8f?: string | null;
   FlowStatus?: "Created" | "Changed" | "Finished" | null;
   Sign_x002d_off_x0020_status?: string | null;
+  [key: string]: any;
 }

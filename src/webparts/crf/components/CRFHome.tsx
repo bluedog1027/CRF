@@ -1,23 +1,19 @@
 import * as React from "react";
 import { WebPartContext } from "@microsoft/sp-webpart-base";
+import HttpClientService from '../../../services/HttpClientService';
 import { SPFI } from "@pnp/sp";
 import {
   Badge,
   Button,
   Dropdown,
   FluentProvider,
+  IdPrefixProvider,
   MessageBar,
   MessageBarBody,
   MessageBarTitle,
   Option,
   Spinner,
   Text,
-  Toast,
-  ToastBody,
-  ToastTitle,
-  Toaster,
-  useId,
-  useToastController,
   webLightTheme,
 } from "@fluentui/react-components";
 import { AddRegular, ArrowClockwiseRegular, EditRegular } from "@fluentui/react-icons";
@@ -26,12 +22,21 @@ import { CRFService } from "../../../services/CRFService";
 import { ICRFFormItem } from "../../../models/ICRFFormItem";
 import { CRFContentType } from "../../../models/CRFFieldModel";
 import CRFFormRenderer from "./CRFFormRenderer";
+import { NotifyProvider } from "./ToastMaker";
+import { useNotify } from "./ToastMaker";
 import styles from "./Crf.module.scss";
 //https://cplace.sharepoint.com/sites/Workflows/StoreOps/SitePages/CRFTest.aspx?debug=true&noredir=true&debugManifestsFile=https%3A%2F%2Flocalhost%3A4321%2Ftemp%2Fmanifests.js
+export const SupportDataContext = React.createContext<{ ctx: WebPartContext, httpServiceCtx: HttpClientService }>({
+  ctx: {} as WebPartContext,
+  httpServiceCtx: {} as HttpClientService,
+})
+
+
 export type CRFHomeProps = {
   sp: SPFI;
   context: WebPartContext;
   theme?: any;
+  httpService: HttpClientService;
 };
 
 const COMM_STATUSES = ["Cancelled", "Placeholder", "Pending Draft", "Published"];
@@ -77,7 +82,7 @@ const formatActualPublishDate = (value?: string | null): string => {
   return date.toLocaleDateString();
 };
 
-const CRFHomeApp: React.FC<CRFHomeProps> = ({ sp }) => {
+const CRFHomeApp: React.FC<CRFHomeProps> = ({ sp, context, httpService }) => {
   const service = React.useMemo(() => new CRFService(sp), [sp]);
   const navigate = useNavigate();
   const statusColor = React.useCallback(
@@ -97,29 +102,31 @@ const CRFHomeApp: React.FC<CRFHomeProps> = ({ sp }) => {
     },
     []
   );
-
+  const ctx: WebPartContext = context;
+  const httpServiceCtx: HttpClientService = httpService;
   const [items, setItems] = React.useState<ICRFFormItem[]>([]);
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [error, setError] = React.useState<string | null>(null);
   const [statusFilter, setStatusFilter] = React.useState<string | undefined>(undefined);
   const [isWorkflowOwner, setIsWorkflowOwner] = React.useState(false);
   const [contentTypeMap, setContentTypeMap] = React.useState<Record<string, string>>({});
+  const { notify } = useNotify();
+  //const toasterId = useId("crf-toaster");
+  //const { dispatchToast } = useToastController(toasterId);
+  const supportData = { ctx, httpServiceCtx };
 
-  const toasterId = useId("crf-toaster");
-  const { dispatchToast } = useToastController(toasterId);
-
-  const notify = React.useCallback(
-    (title: string, body?: string, intent: "success" | "error" = "success") => {
-      dispatchToast(
-        <Toast>
-          <ToastTitle>{title}</ToastTitle>
-          {body && <ToastBody>{body}</ToastBody>}
-        </Toast>,
-        { intent }
-      );
-    },
-    [dispatchToast]
-  );
+  /*   const notify = React.useCallback(
+      (title: string, body?: string, intent: "success" | "error" = "success") => {
+        dispatchToast(
+          <Toast>
+            <ToastTitle>{title}</ToastTitle>
+            {body && <ToastBody>{body}</ToastBody>}
+          </Toast>,
+          { intent }
+        );
+      },
+      [dispatchToast]
+    ); */
 
   const loadItems = React.useCallback(async () => {
     setIsLoading(true);
@@ -135,7 +142,7 @@ const CRFHomeApp: React.FC<CRFHomeProps> = ({ sp }) => {
   }, [service, statusFilter]);
 
   React.useEffect(() => {
-    void loadItems();
+    loadItems();
   }, [loadItems]);
 
   React.useEffect(() => {
@@ -183,11 +190,11 @@ const CRFHomeApp: React.FC<CRFHomeProps> = ({ sp }) => {
         payload.ContentTypeId = contentTypeId;
       }
 
-      const created = await service.createItem(payload as ICRFFormItem);
+      const created = await service.createItem(context.spHttpClient,payload as ICRFFormItem);
       if (created.Id && attachments.length) {
         await service.addAttachments(created.Id, attachments);
       }
-      notify("CRF created");
+      notify("CRF created", '', 'success', false, '/');
       await loadItems();
     },
     [contentTypeMap, loadItems, notify, service]
@@ -195,71 +202,77 @@ const CRFHomeApp: React.FC<CRFHomeProps> = ({ sp }) => {
 
   const updateItem = React.useCallback(
     async (itemId: number, values: Partial<ICRFFormItem>, attachments: File[]) => {
-      await service.updateItem(itemId, values);
+      await service.updateItem(context.spHttpClient, itemId, values);
+      console.log(attachments);
       if (attachments.length) {
         await service.addAttachments(itemId, attachments);
       }
-      notify("CRF updated");
+      notify("CRF updated", '', 'success', false, '/');
       await loadItems();
     },
     [loadItems, notify, service]
   );
 
   return (
-    <FluentProvider theme={webLightTheme} className={styles.crf}>
-      <Toaster toasterId={toasterId} />
-      {error && (
-        <MessageBar intent="error">
-          <MessageBarBody>
-            <MessageBarTitle>{error}</MessageBarTitle>
-          </MessageBarBody>
-          <Button appearance="transparent" onClick={() => setError(null)}>
-            Dismiss
-          </Button>
-        </MessageBar>
-      )}
+    <IdPrefixProvider value="APP1-">
+      <FluentProvider theme={webLightTheme} className={styles.crf}>
+        <SupportDataContext.Provider value={supportData}>
+          {error && (
+            <MessageBar intent="error">
+              <MessageBarBody>
+                <MessageBarTitle>{error}</MessageBarTitle>
+              </MessageBarBody>
+              <Button appearance="transparent" onClick={() => setError(null)}>
+                Dismiss
+              </Button>
+            </MessageBar>
+          )}
 
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <CRFListScreen
-              items={items}
-              isLoading={isLoading}
-              statusFilter={statusFilter}
-              onStatusFilterChange={setStatusFilter}
-              onRefresh={loadItems}
-              onEdit={(itemId) => navigate(`/edit/${itemId}`)}
-              onCreate={(contentType) => navigate(`/new/${CONTENT_TYPE_TO_SLUG[contentType]}`)}
-              statusColor={statusColor}
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <CRFListScreen
+                  items={items}
+                  isLoading={isLoading}
+                  statusFilter={statusFilter}
+                  onStatusFilterChange={setStatusFilter}
+                  onRefresh={loadItems}
+                  onEdit={(itemId) => navigate(`/edit/${itemId}`)}
+                  onCreate={(contentType) => navigate(`/new/${CONTENT_TYPE_TO_SLUG[contentType]}`)}
+                  statusColor={statusColor}
+                />
+              }
             />
-          }
-        />
-        <Route
-          path="/new/:contentTypeSlug"
-          element={
-            <CRFNewFormScreen
-              service={service}
-              isWorkflowOwner={isWorkflowOwner}
-              onSubmit={createItem}
-              onCancel={() => navigate("/")}
+            <Route
+              path="/new/:contentTypeSlug"
+              element={
+                <CRFNewFormScreen
+                  service={service}
+                  isWorkflowOwner={isWorkflowOwner}
+                  context={context}
+                  onSubmit={createItem}
+                  onCancel={() => navigate("/")}
+                />
+              }
             />
-          }
-        />
-        <Route
-          path="/edit/:itemId"
-          element={
-            <CRFEditFormScreen
-              service={service}
-              isWorkflowOwner={isWorkflowOwner}
-              onSubmit={updateItem}
-              onCancel={() => navigate("/")}
+            <Route
+              path="/edit/:itemId"
+              element={
+                <CRFEditFormScreen
+                  service={service}
+                  isWorkflowOwner={isWorkflowOwner}
+                  context={context}
+                  onSubmit={updateItem}
+                  onCancel={() => navigate("/")}
+                />
+              }
             />
-          }
-        />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </FluentProvider>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </SupportDataContext.Provider>
+      </FluentProvider>
+    </IdPrefixProvider>
   );
 };
 
@@ -302,6 +315,7 @@ const CRFListScreen: React.FC<CRFListScreenProps> = ({
         <div className={styles.filters}>
           <Dropdown
             aria-label="Comm status filter"
+            inlinePopup
             placeholder="Comm Status"
             selectedOptions={statusFilter ? [statusFilter] : []}
             onOptionSelect={(_, data) => {
@@ -318,7 +332,7 @@ const CRFListScreen: React.FC<CRFListScreenProps> = ({
               </Option>
             ))}
           </Dropdown>
-          <Button appearance="secondary" icon={<ArrowClockwiseRegular />} onClick={() => void onRefresh()}>
+          <Button appearance="secondary" icon={<ArrowClockwiseRegular />} onClick={() => onRefresh()}>
             Refresh
           </Button>
         </div>
@@ -381,11 +395,12 @@ const CRFListScreen: React.FC<CRFListScreenProps> = ({
 type CRFNewFormScreenProps = {
   service: CRFService;
   isWorkflowOwner: boolean;
+  context: WebPartContext;
   onSubmit: (contentType: CRFContentType, values: Partial<ICRFFormItem>, attachments: File[]) => Promise<void>;
   onCancel: () => void;
 };
 
-const CRFNewFormScreen: React.FC<CRFNewFormScreenProps> = ({ service, isWorkflowOwner, onSubmit, onCancel }) => {
+const CRFNewFormScreen: React.FC<CRFNewFormScreenProps> = ({ service, isWorkflowOwner, context, onSubmit, onCancel }) => {
   const params = useParams<{ contentTypeSlug: string }>();
   const slug = params.contentTypeSlug as CRFContentTypeSlug | undefined;
   const contentType = slug && SLUG_TO_CONTENT_TYPE[slug];
@@ -403,6 +418,7 @@ const CRFNewFormScreen: React.FC<CRFNewFormScreenProps> = ({ service, isWorkflow
         service={service}
         isWorkflowOwner={isWorkflowOwner}
         initialValues={null}
+        context={context}
         isSubmitting={isSubmitting}
         onSubmit={async (values, attachments) => {
           setIsSubmitting(true);
@@ -422,11 +438,12 @@ const CRFNewFormScreen: React.FC<CRFNewFormScreenProps> = ({ service, isWorkflow
 type CRFEditFormScreenProps = {
   service: CRFService;
   isWorkflowOwner: boolean;
+  context: WebPartContext;
   onSubmit: (itemId: number, values: Partial<ICRFFormItem>, attachments: File[]) => Promise<void>;
   onCancel: () => void;
 };
 
-const CRFEditFormScreen: React.FC<CRFEditFormScreenProps> = ({ service, isWorkflowOwner, onSubmit, onCancel }) => {
+const CRFEditFormScreen: React.FC<CRFEditFormScreenProps> = ({ service, isWorkflowOwner, context, onSubmit, onCancel }) => {
   const params = useParams<{ itemId: string }>();
   const itemId = Number(params.itemId);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -478,6 +495,7 @@ const CRFEditFormScreen: React.FC<CRFEditFormScreenProps> = ({ service, isWorkfl
             isWorkflowOwner={isWorkflowOwner}
             initialValues={item}
             isSubmitting={isSubmitting}
+            context={context}
             onSubmit={async (values, attachments) => {
               setIsSubmitting(true);
               try {
@@ -498,7 +516,9 @@ const CRFEditFormScreen: React.FC<CRFEditFormScreenProps> = ({ service, isWorkfl
 const CRFHome: React.FC<CRFHomeProps> = (props) => {
   return (
     <HashRouter>
-      <CRFHomeApp {...props} />
+      <NotifyProvider>
+        <CRFHomeApp {...props} />
+      </NotifyProvider>
     </HashRouter>
   );
 };

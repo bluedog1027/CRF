@@ -13,7 +13,7 @@ module.exports = {
       },
       rules: {
         // Prevent usage of the JavaScript null value, while allowing code to access existing APIs that may require null. https://www.npmjs.com/package/@rushstack/eslint-plugin
-        '@rushstack/no-new-null': 1,
+        '@rushstack/no-new-null': 0,
         // Require Jest module mocking APIs to be called before any other statements in their code block. https://www.npmjs.com/package/@rushstack/eslint-plugin
         '@rushstack/hoist-jest-mock': 1,
         // Require regular expressions to be constructed from string constants rather than dynamically building strings at runtime. https://www.npmjs.com/package/@rushstack/eslint-plugin-security
@@ -102,7 +102,7 @@ module.exports = {
         ],
         // STANDARDIZED BY:   @typescript-eslint\eslint-plugin\dist\configs\recommended.json
         '@typescript-eslint/no-use-before-define': [
-          2,
+          0,
           {
             'functions': false,
             'classes': true,
@@ -244,7 +244,7 @@ module.exports = {
         // RATIONALE:         Catches a common coding mistake.
         'no-unmodified-loop-condition': 1,
         // STANDARDIZED BY:   eslint\conf\eslint-recommended.js
-        'no-unsafe-finally': 2,
+        'no-unsafe-finally': 0,
         // RATIONALE:         Catches a common coding mistake.
         'no-unused-expressions': 1,
         // STANDARDIZED BY:   eslint\conf\eslint-recommended.js

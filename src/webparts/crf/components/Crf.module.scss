@@ -132,10 +132,10 @@
   background: rgba(255, 255, 255, 0.65);
 }
 
-.dialogSurface {
+/* .dialogSurface {
   width: min(1100px, 96vw);
   max-width: 100% !important;
-}
+} */
 
 .formGrid {
   display: grid;
@@ -251,4 +251,80 @@
       width: 100%;
     }
   }
+}
+
+.listItems {
+  border-radius: 3px;
+  //width: 79vw;
+  //margin: auto;
+}
+
+.gridbody {
+  //height: 70vh;
+  overflow-y: 'hidden';
+  overflow-x: 'hidden';
+  box-shadow: 0 0 2px rgba(0, 0, 0, .12), 0 1px 2px rgba(0, 0, 0, .14);
+
+  /*   @include respond-to('large') {
+    height: 60vh;
+  }
+
+  @include respond-to('medium') {
+    height: 60vh;
+  } */
+
+}
+
+
+.gridHeader {
+  //min-width: 'auto' !important;
+  box-shadow: 0 0 2px rgba(0, 0, 0, .12), 0 1px 2px rgba(0, 0, 0, .14);
+  border-radius: 2px;
+  background-color: 'white'
+}
+
+.DataGridArea {
+  //overflow: hidden;
+  overflow-y: auto;
+
+  /* Custom scrollbar styles for WebKit browsers */
+  &::-webkit-scrollbar {
+    width: 6px;
+    /* Width of the entire scrollbar */
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    /* Background of the scrollbar track */
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #999797;
+    /* Color of the scrollbar thumb */
+    border-radius: 10px;
+    /* Roundness of the scrollbar thumb */
+    border: 3px solid #f1f1f1;
+    /* Padding around the scrollbar thumb */
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: #555;
+    /* Color of the scrollbar thumb when hovered */
+  }
+
+  /* Custom scrollbar styles for Firefox */
+  scrollbar-width: thin;
+  /* Width of the scrollbar */
+  scrollbar-color: #888 #f1f1f1;
+  /* Color of the scrollbar thumb and track */
+}
+
+.pendingempty {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  justify-content: center;
+  height: 30vh;
+  width: 50vw;
+  font-size: x-large;
 }

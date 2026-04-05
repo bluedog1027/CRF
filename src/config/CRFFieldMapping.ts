@@ -9,14 +9,32 @@ export const CRF_FIELD_MAPPING: CRFFieldMap = {
       "fieldType": FieldType.Text
     },
     {
-      "internalName": "Desired_x0020_Publish_x0020_Date",
-      "displayName": "Desired Publish Date",
-      "fieldType": FieldType.DateTime
-    },
-    {
-      "internalName": "Effective_x0020_Date",
-      "displayName": "Effective Date",
-      "fieldType": FieldType.DateTime
+      "internalName": "Department",
+      "displayName": "Department",
+      "fieldType": FieldType.Choice,
+      "options": [
+        "Engagement",
+        "Finance",
+        "HR",
+        "IT",
+        "Internal Audit",
+        "Legal",
+        "Logistics",
+        "Loss Prevention",
+        "Maintenance",
+        "Marketing",
+        "Merchandising",
+        "Omnichannel",
+        "Planning & Allocation",
+        "Quality Assurance",
+        "Real Estate",
+        "Store Comm",
+        "Store Ops",
+        "Supply/Maintenance",
+        "Tax",
+        "Visual",
+        "N/A"
+      ]
     },
     {
       "internalName": "Stores_x0020_or_x0020_Channels_x",
@@ -30,6 +48,21 @@ export const CRF_FIELD_MAPPING: CRFFieldMap = {
         "US GYM",
         "CAN GYM"
       ]
+    },
+    {
+      "internalName": "Desired_x0020_Publish_x0020_Date",
+      "displayName": "Desired Publish Date",
+      "fieldType": FieldType.DateTime
+    },
+    {
+      "internalName": "Effective_x0020_Date",
+      "displayName": "Effective Date",
+      "fieldType": FieldType.DateTime
+    },
+    {
+      "internalName": "Effective_x0020_Fiscal_x0020_Wee",
+      "displayName": "Effective Fiscal Week",
+      "fieldType": FieldType.Number
     },
     {
       "internalName": "Are_x0020_resources_x0020_availa",
@@ -63,6 +96,11 @@ export const CRF_FIELD_MAPPING: CRFFieldMap = {
       "internalName": "Who_x0020_can_x0020_stores_x002f",
       "displayName": "Who can stores/DMs contact for support?",
       "fieldType": FieldType.Text
+    },
+    {
+      "internalName": "Effective_x0020_End_x0020_Date",
+      "displayName": "Effective End Date",
+      "fieldType": FieldType.DateTime
     },
     {
       "internalName": "Scope_x0020_of_x0020_Project",
@@ -100,34 +138,6 @@ export const CRF_FIELD_MAPPING: CRFFieldMap = {
       ]
     },
     {
-      "internalName": "Department",
-      "displayName": "Department",
-      "fieldType": FieldType.Choice,
-      "options": [
-        "Engagement",
-        "Finance",
-        "HR",
-        "IT",
-        "Internal Audit",
-        "Legal",
-        "Logistics",
-        "Loss Prevention",
-        "Maintenance",
-        "Marketing",
-        "Merchandising",
-        "Omnichannel",
-        "Planning & Allocation",
-        "Quality Assurance",
-        "Real Estate",
-        "Store Comm",
-        "Store Ops",
-        "Supply/Maintenance",
-        "Tax",
-        "Visual",
-        "N/A"
-      ]
-    },
-    {
       "internalName": "Language",
       "displayName": "Language",
       "fieldType": FieldType.MultiChoice,
@@ -152,7 +162,7 @@ export const CRF_FIELD_MAPPING: CRFFieldMap = {
     },
     {
       "internalName": "Who_x0020_in_x0020_Store_x0020_O",
-      "displayName": "What member of Store Operations has reviewed this CRF? What other team members should be included in the approval email?",
+      "displayName": "What other team members should be included in the approval email?",
       "fieldType": FieldType.UserMulti
     },
     {
@@ -281,16 +291,6 @@ export const CRF_FIELD_MAPPING: CRFFieldMap = {
       ]
     },
     {
-      "internalName": "Effective_x0020_Fiscal_x0020_Wee",
-      "displayName": "Effective Fiscal Week",
-      "fieldType": FieldType.Number
-    },
-    {
-      "internalName": "Effective_x0020_End_x0020_Date",
-      "displayName": "Effective End Date",
-      "fieldType": FieldType.DateTime
-    },
-    {
       "internalName": "qs8f",
       "displayName": "Text",
       "fieldType": FieldType.Text
@@ -318,14 +318,32 @@ export const CRF_FIELD_MAPPING: CRFFieldMap = {
       "fieldType": FieldType.Text
     },
     {
-      "internalName": "Desired_x0020_Publish_x0020_Date",
-      "displayName": "Desired Publish Date",
-      "fieldType": FieldType.DateTime
-    },
-    {
-      "internalName": "Effective_x0020_Date",
-      "displayName": "Effective Date",
-      "fieldType": FieldType.DateTime
+      "internalName": "Department",
+      "displayName": "Department",
+      "fieldType": FieldType.Choice,
+      "options": [
+        "Engagement",
+        "Finance",
+        "HR",
+        "IT",
+        "Internal Audit",
+        "Legal",
+        "Logistics",
+        "Loss Prevention",
+        "Maintenance",
+        "Marketing",
+        "Merchandising",
+        "Omnichannel",
+        "Planning & Allocation",
+        "Quality Assurance",
+        "Real Estate",
+        "Store Comm",
+        "Store Ops",
+        "Supply/Maintenance",
+        "Tax",
+        "Visual",
+        "N/A"
+      ]
     },
     {
       "internalName": "Stores_x0020_or_x0020_Channels_x",
@@ -339,6 +357,21 @@ export const CRF_FIELD_MAPPING: CRFFieldMap = {
         "US GYM",
         "CAN GYM"
       ]
+    },
+    {
+      "internalName": "Desired_x0020_Publish_x0020_Date",
+      "displayName": "Desired Publish Date",
+      "fieldType": FieldType.DateTime
+    },
+    {
+      "internalName": "Effective_x0020_Date",
+      "displayName": "Effective Date",
+      "fieldType": FieldType.DateTime
+    },
+    {
+      "internalName": "Effective_x0020_Fiscal_x0020_Wee",
+      "displayName": "Effective Fiscal Week",
+      "fieldType": FieldType.Number
     },
     {
       "internalName": "Are_x0020_resources_x0020_availa",
@@ -372,6 +405,11 @@ export const CRF_FIELD_MAPPING: CRFFieldMap = {
       "internalName": "Who_x0020_can_x0020_stores_x002f",
       "displayName": "Who can stores/DMs contact for support?",
       "fieldType": FieldType.Text
+    },
+    {
+      "internalName": "Effective_x0020_End_x0020_Date",
+      "displayName": "Effective End Date",
+      "fieldType": FieldType.DateTime
     },
     {
       "internalName": "Scope_x0020_of_x0020_Project",
@@ -434,34 +472,6 @@ export const CRF_FIELD_MAPPING: CRFFieldMap = {
       ]
     },
     {
-      "internalName": "Department",
-      "displayName": "Department",
-      "fieldType": FieldType.Choice,
-      "options": [
-        "Engagement",
-        "Finance",
-        "HR",
-        "IT",
-        "Internal Audit",
-        "Legal",
-        "Logistics",
-        "Loss Prevention",
-        "Maintenance",
-        "Marketing",
-        "Merchandising",
-        "Omnichannel",
-        "Planning & Allocation",
-        "Quality Assurance",
-        "Real Estate",
-        "Store Comm",
-        "Store Ops",
-        "Supply/Maintenance",
-        "Tax",
-        "Visual",
-        "N/A"
-      ]
-    },
-    {
       "internalName": "Language",
       "displayName": "Language",
       "fieldType": FieldType.MultiChoice,
@@ -486,7 +496,7 @@ export const CRF_FIELD_MAPPING: CRFFieldMap = {
     },
     {
       "internalName": "Who_x0020_in_x0020_Store_x0020_O",
-      "displayName": "What member of Store Operations has reviewed this CRF? What other team members should be included in the approval email?",
+      "displayName": "What other team members should be included in the approval email?",
       "fieldType": FieldType.UserMulti
     },
     {
@@ -620,16 +630,6 @@ export const CRF_FIELD_MAPPING: CRFFieldMap = {
       ]
     },
     {
-      "internalName": "Effective_x0020_Fiscal_x0020_Wee",
-      "displayName": "Effective Fiscal Week",
-      "fieldType": FieldType.Number
-    },
-    {
-      "internalName": "Effective_x0020_End_x0020_Date",
-      "displayName": "Effective End Date",
-      "fieldType": FieldType.DateTime
-    },
-    {
       "internalName": "FlowStatus",
       "displayName": "FlowStatus",
       "fieldType": FieldType.Choice,
@@ -652,14 +652,32 @@ export const CRF_FIELD_MAPPING: CRFFieldMap = {
       "fieldType": FieldType.Text
     },
     {
-      "internalName": "Desired_x0020_Publish_x0020_Date",
-      "displayName": "Desired Publish Date",
-      "fieldType": FieldType.DateTime
-    },
-    {
-      "internalName": "Effective_x0020_Date",
-      "displayName": "Effective Date",
-      "fieldType": FieldType.DateTime
+      "internalName": "Department",
+      "displayName": "Department",
+      "fieldType": FieldType.Choice,
+      "options": [
+        "Engagement",
+        "Finance",
+        "HR",
+        "IT",
+        "Internal Audit",
+        "Legal",
+        "Logistics",
+        "Loss Prevention",
+        "Maintenance",
+        "Marketing",
+        "Merchandising",
+        "Omnichannel",
+        "Planning & Allocation",
+        "Quality Assurance",
+        "Real Estate",
+        "Store Comm",
+        "Store Ops",
+        "Supply/Maintenance",
+        "Tax",
+        "Visual",
+        "N/A"
+      ]
     },
     {
       "internalName": "Stores_x0020_or_x0020_Channels_x",
@@ -673,6 +691,21 @@ export const CRF_FIELD_MAPPING: CRFFieldMap = {
         "US GYM",
         "CAN GYM"
       ]
+    },
+    {
+      "internalName": "Desired_x0020_Publish_x0020_Date",
+      "displayName": "Desired Publish Date",
+      "fieldType": FieldType.DateTime
+    },
+    {
+      "internalName": "Effective_x0020_Date",
+      "displayName": "Effective Date",
+      "fieldType": FieldType.DateTime
+    },
+    {
+      "internalName": "Effective_x0020_Fiscal_x0020_Wee",
+      "displayName": "Effective Fiscal Week",
+      "fieldType": FieldType.Number
     },
     {
       "internalName": "Are_x0020_resources_x0020_availa",
@@ -706,6 +739,11 @@ export const CRF_FIELD_MAPPING: CRFFieldMap = {
       "internalName": "Who_x0020_can_x0020_stores_x002f",
       "displayName": "Who can stores/DMs contact for support?",
       "fieldType": FieldType.Text
+    },
+    {
+      "internalName": "Effective_x0020_End_x0020_Date",
+      "displayName": "Effective End Date",
+      "fieldType": FieldType.DateTime
     },
     {
       "internalName": "Scope_x0020_of_x0020_Project",
@@ -800,34 +838,6 @@ export const CRF_FIELD_MAPPING: CRFFieldMap = {
       ]
     },
     {
-      "internalName": "Department",
-      "displayName": "Department",
-      "fieldType": FieldType.Choice,
-      "options": [
-        "Engagement",
-        "Finance",
-        "HR",
-        "IT",
-        "Internal Audit",
-        "Legal",
-        "Logistics",
-        "Loss Prevention",
-        "Maintenance",
-        "Marketing",
-        "Merchandising",
-        "Omnichannel",
-        "Planning & Allocation",
-        "Quality Assurance",
-        "Real Estate",
-        "Store Comm",
-        "Store Ops",
-        "Supply/Maintenance",
-        "Tax",
-        "Visual",
-        "N/A"
-      ]
-    },
-    {
       "internalName": "Language",
       "displayName": "Language",
       "fieldType": FieldType.MultiChoice,
@@ -852,7 +862,7 @@ export const CRF_FIELD_MAPPING: CRFFieldMap = {
     },
     {
       "internalName": "Who_x0020_in_x0020_Store_x0020_O",
-      "displayName": "What member of Store Operations has reviewed this CRF? What other team members should be included in the approval email?",
+      "displayName": "What other team members should be included in the approval email?",
       "fieldType": FieldType.UserMulti
     },
     {
@@ -981,16 +991,6 @@ export const CRF_FIELD_MAPPING: CRFFieldMap = {
       ]
     },
     {
-      "internalName": "Effective_x0020_Fiscal_x0020_Wee",
-      "displayName": "Effective Fiscal Week",
-      "fieldType": FieldType.Number
-    },
-    {
-      "internalName": "Effective_x0020_End_x0020_Date",
-      "displayName": "Effective End Date",
-      "fieldType": FieldType.DateTime
-    },
-    {
       "internalName": "FlowStatus",
       "displayName": "FlowStatus",
       "fieldType": FieldType.Choice,
@@ -1013,14 +1013,32 @@ export const CRF_FIELD_MAPPING: CRFFieldMap = {
       "fieldType": FieldType.Text
     },
     {
-      "internalName": "Desired_x0020_Publish_x0020_Date",
-      "displayName": "Desired Publish Date",
-      "fieldType": FieldType.DateTime
-    },
-    {
-      "internalName": "Effective_x0020_Date",
-      "displayName": "Effective Date",
-      "fieldType": FieldType.DateTime
+      "internalName": "Department",
+      "displayName": "Department",
+      "fieldType": FieldType.Choice,
+      "options": [
+        "Engagement",
+        "Finance",
+        "HR",
+        "IT",
+        "Internal Audit",
+        "Legal",
+        "Logistics",
+        "Loss Prevention",
+        "Maintenance",
+        "Marketing",
+        "Merchandising",
+        "Omnichannel",
+        "Planning & Allocation",
+        "Quality Assurance",
+        "Real Estate",
+        "Store Comm",
+        "Store Ops",
+        "Supply/Maintenance",
+        "Tax",
+        "Visual",
+        "N/A"
+      ]
     },
     {
       "internalName": "Stores_x0020_or_x0020_Channels_x",
@@ -1034,6 +1052,21 @@ export const CRF_FIELD_MAPPING: CRFFieldMap = {
         "US GYM",
         "CAN GYM"
       ]
+    },
+    {
+      "internalName": "Desired_x0020_Publish_x0020_Date",
+      "displayName": "Desired Publish Date",
+      "fieldType": FieldType.DateTime
+    },
+    {
+      "internalName": "Effective_x0020_Date",
+      "displayName": "Effective Date",
+      "fieldType": FieldType.DateTime
+    },
+    {
+      "internalName": "Effective_x0020_Fiscal_x0020_Wee",
+      "displayName": "Effective Fiscal Week",
+      "fieldType": FieldType.Number
     },
     {
       "internalName": "Are_x0020_resources_x0020_availa",
@@ -1238,6 +1271,11 @@ export const CRF_FIELD_MAPPING: CRFFieldMap = {
       ]
     },
     {
+      "internalName": "Compliance_x0020_Survey_x0020_Li",
+      "displayName": "Compliance Survey Link",
+      "fieldType": FieldType.Text
+    },
+    {
       "internalName": "Is_x0020_the_x0020_Store_x0020_L",
       "displayName": "Is the Store Labor Team funding payroll to support this?",
       "fieldType": FieldType.Choice,
@@ -1245,11 +1283,6 @@ export const CRF_FIELD_MAPPING: CRFFieldMap = {
         "Yes",
         "No"
       ]
-    },
-    {
-      "internalName": "Compliance_x0020_Survey_x0020_Li",
-      "displayName": "Compliance Survey Link",
-      "fieldType": FieldType.Text
     },
     {
       "internalName": "Payroll_x0020_Direction",
@@ -1280,34 +1313,6 @@ export const CRF_FIELD_MAPPING: CRFFieldMap = {
       ]
     },
     {
-      "internalName": "Department",
-      "displayName": "Department",
-      "fieldType": FieldType.Choice,
-      "options": [
-        "Engagement",
-        "Finance",
-        "HR",
-        "IT",
-        "Internal Audit",
-        "Legal",
-        "Logistics",
-        "Loss Prevention",
-        "Maintenance",
-        "Marketing",
-        "Merchandising",
-        "Omnichannel",
-        "Planning & Allocation",
-        "Quality Assurance",
-        "Real Estate",
-        "Store Comm",
-        "Store Ops",
-        "Supply/Maintenance",
-        "Tax",
-        "Visual",
-        "N/A"
-      ]
-    },
-    {
       "internalName": "Language",
       "displayName": "Language",
       "fieldType": FieldType.MultiChoice,
@@ -1332,7 +1337,7 @@ export const CRF_FIELD_MAPPING: CRFFieldMap = {
     },
     {
       "internalName": "Who_x0020_in_x0020_Store_x0020_O",
-      "displayName": "What member of Store Operations has reviewed this CRF? What other team members should be included in the approval email?",
+      "displayName": "What other team members should be included in the approval email?",
       "fieldType": FieldType.UserMulti
     },
     {
@@ -1459,11 +1464,6 @@ export const CRF_FIELD_MAPPING: CRFFieldMap = {
         "TCP",
         "GYM"
       ]
-    },
-    {
-      "internalName": "Effective_x0020_Fiscal_x0020_Wee",
-      "displayName": "Effective Fiscal Week",
-      "fieldType": FieldType.Number
     },
     {
       "internalName": "Effective_x0020_End_x0020_Date",
