@@ -14,6 +14,7 @@ import {
   Option,
   Spinner,
   Text,
+  Link,
   webLightTheme,
 } from "@fluentui/react-components";
 import { AddRegular, ArrowClockwiseRegular, EditRegular } from "@fluentui/react-icons";
@@ -40,6 +41,7 @@ export type CRFHomeProps = {
 };
 
 const COMM_STATUSES = ["Cancelled", "Placeholder", "Pending Draft", "Published"];
+const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
 type CRFContentTypeSlug = "general" | "marketing" | "transfer" | "qa";
 
@@ -142,7 +144,9 @@ const CRFHomeApp: React.FC<CRFHomeProps> = ({ sp, context, httpService }) => {
   }, [service, statusFilter]);
 
   React.useEffect(() => {
-    loadItems();
+    loadItems().catch(() => {
+      // Errors are already captured in loadItems.
+    });
   }, [loadItems]);
 
   React.useEffect(() => {
@@ -159,7 +163,10 @@ const CRFHomeApp: React.FC<CRFHomeProps> = ({ sp, context, httpService }) => {
       } catch (err: any) {
         setError(err.message ?? "Unable to load content types");
       }
-    })();
+    })().catch((err: any) => {
+      if (!isMounted) return;
+      setError(err?.message ?? "Unable to load content types");
+    });
     return () => {
       isMounted = false;
     };
@@ -176,7 +183,10 @@ const CRFHomeApp: React.FC<CRFHomeProps> = ({ sp, context, httpService }) => {
         if (!isMounted) return;
         setIsWorkflowOwner(false);
       }
-    })();
+    })().catch(() => {
+      if (!isMounted) return;
+      setIsWorkflowOwner(false);
+    });
     return () => {
       isMounted = false;
     };
@@ -297,6 +307,28 @@ const CRFListScreen: React.FC<CRFListScreenProps> = ({
   onCreate,
   statusColor,
 }) => {
+  const [pageSize, setPageSize] = React.useState<number>(10);
+  const [currentPage, setCurrentPage] = React.useState<number>(1);
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter]);
+
+  const totalItems = items.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const pageStartIndex = totalItems === 0 ? 0 : (currentPage - 1) * pageSize;
+  const pageEndIndex = Math.min(pageStartIndex + pageSize, totalItems);
+  const pagedItems = React.useMemo(
+    () => items.slice(pageStartIndex, pageEndIndex),
+    [items, pageStartIndex, pageEndIndex]
+  );
+
+  React.useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
   return (
     <>
       <div className={styles.toolbar}>
@@ -359,7 +391,7 @@ const CRFListScreen: React.FC<CRFListScreenProps> = ({
               </tr>
             </thead>
             <tbody>
-              {items.map((item) => (
+              {pagedItems.map((item) => (
                 <tr key={item.Id}>
                   <td>{item.Title}</td>
                   <td>
@@ -388,6 +420,51 @@ const CRFListScreen: React.FC<CRFListScreenProps> = ({
           </table>
         )}
       </div>
+
+      {!isLoading && totalItems > 0 && (
+        <div className={styles.paginationBar}>
+          <Text className={styles.paginationSummary}>
+            Showing {pageStartIndex + 1}-{pageEndIndex} of {totalItems}
+          </Text>
+          <div className={styles.paginationControls}>
+            <Dropdown
+              aria-label="Rows per page"
+              inlinePopup
+              selectedOptions={[String(pageSize)]}
+              onOptionSelect={(_, data) => {
+                const value = Number(data.optionValue);
+                if (!Number.isNaN(value)) {
+                  setPageSize(value);
+                  setCurrentPage(1);
+                }
+              }}
+            >
+              {PAGE_SIZE_OPTIONS.map((size) => (
+                <Option key={size} value={String(size)} text={`${size} per page`}>
+                  {size} per page
+                </Option>
+              ))}
+            </Dropdown>
+            <Button
+              appearance="secondary"
+              disabled={currentPage <= 1}
+              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+            >
+              Previous
+            </Button>
+            <Text className={styles.pageIndicator}>
+              Page {currentPage} of {totalPages}
+            </Text>
+            <Button
+              appearance="secondary"
+              disabled={currentPage >= totalPages}
+              onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
     </>
   );
 };
@@ -449,6 +526,7 @@ const CRFEditFormScreen: React.FC<CRFEditFormScreenProps> = ({ service, isWorkfl
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [item, setItem] = React.useState<ICRFFormItem | null>(null);
+  const [existingAttachments, setExistingAttachments] = React.useState<{ FileName: string; ServerRelativeUrl: string }[]>([]);
 
   React.useEffect(() => {
     if (!Number.isFinite(itemId)) {
@@ -458,14 +536,24 @@ const CRFEditFormScreen: React.FC<CRFEditFormScreenProps> = ({ service, isWorkfl
     let isMounted = true;
     (async () => {
       try {
-        const fullItem = await service.getItem(itemId);
+        const [fullItem, files] = await Promise.all([service.getItem(itemId), service.getAttachments(itemId)]);
         if (!isMounted) return;
         setItem(fullItem);
+        setExistingAttachments(files);
+      } catch {
+        if (!isMounted) return;
+        setItem(null);
+        setExistingAttachments([]);
       } finally {
         if (!isMounted) return;
         setIsLoading(false);
       }
-    })();
+    })().catch(() => {
+      if (!isMounted) return;
+      setItem(null);
+      setExistingAttachments([]);
+      setIsLoading(false);
+    });
     return () => {
       isMounted = false;
     };
@@ -489,6 +577,22 @@ const CRFEditFormScreen: React.FC<CRFEditFormScreenProps> = ({ service, isWorkfl
       ) : (
         <>
           <Text weight="semibold">Edit {resolveContentType(item)}</Text>
+          <div className={styles.existingAttachments}>
+            <Text weight="semibold">Existing attachments</Text>
+            {existingAttachments.length ? (
+              <ul className={styles.attachmentsList}>
+                {existingAttachments.map((file) => (
+                  <li key={`${file.FileName}-${file.ServerRelativeUrl}`}>
+                    <Link href={file.ServerRelativeUrl} target="_blank" rel="noopener noreferrer">
+                      {file.FileName}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <Text size={200}>No attachments on this item yet.</Text>
+            )}
+          </div>
           <CRFFormRenderer
             contentType={resolveContentType(item)}
             service={service}

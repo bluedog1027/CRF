@@ -172,6 +172,18 @@ export class CRFService {
     }
   }
 
+  public async getAttachments(itemId: number): Promise<{ FileName: string; ServerRelativeUrl: string }[]> {
+    const files = await this.sp.web.lists
+      .getByTitle(this.listName)
+      .items.getById(itemId)
+      .attachmentFiles.select("FileName", "ServerRelativeUrl")();
+
+    return files.map((file: any) => ({
+      FileName: file.FileName,
+      ServerRelativeUrl: file.ServerRelativeUrl,
+    }));
+  }
+
   public async deleteItem(id: number): Promise<void> {
     await this.sp.web.lists.getByTitle(this.listName).items.getById(id).delete();
   }
