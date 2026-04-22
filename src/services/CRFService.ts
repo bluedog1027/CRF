@@ -184,6 +184,14 @@ export class CRFService {
     }));
   }
 
+  public async deleteAttachment(itemId: number, fileName: string): Promise<void> {
+    await this.sp.web.lists
+      .getByTitle(this.listName)
+      .items.getById(itemId)
+      .attachmentFiles.getByName(fileName)
+      .delete();
+  }
+
   public async deleteItem(id: number): Promise<void> {
     await this.sp.web.lists.getByTitle(this.listName).items.getById(id).delete();
   }

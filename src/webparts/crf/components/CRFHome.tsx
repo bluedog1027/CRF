@@ -15,7 +15,6 @@ import {
   Spinner,
   Text,
   Link,
-  Input,
   webLightTheme,
 } from "@fluentui/react-components";
 import { AddRegular, ArrowClockwiseRegular, EditRegular } from "@fluentui/react-icons";
@@ -43,6 +42,29 @@ export type CRFHomeProps = {
 
 const COMM_STATUSES = ["Cancelled", "Placeholder", "Pending Draft", "Published"] as const;
 type CommStatus = typeof COMM_STATUSES[number];
+const DEPARTMENT_OPTIONS = [
+  "Engagement",
+  "Finance",
+  "HR",
+  "IT",
+  "Internal Audit",
+  "Legal",
+  "Logistics",
+  "Loss Prevention",
+  "Maintenance",
+  "Marketing",
+  "Merchandising",
+  "Omnichannel",
+  "Planning & Allocation",
+  "Quality Assurance",
+  "Real Estate",
+  "Store Comm",
+  "Store Ops",
+  "Supply/Maintenance",
+  "Tax",
+  "Visual",
+  "N/A",
+] as const;
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
 type CRFContentTypeSlug = "general" | "marketing" | "transfer" | "qa";
@@ -337,7 +359,7 @@ const CRFListScreen: React.FC<CRFListScreenProps> = ({
   onInlineStatusUpdate,
   statusColor,
 }) => {
-  const [departmentSearch, setDepartmentSearch] = React.useState<string>("");
+  const [departmentFilter, setDepartmentFilter] = React.useState<string | undefined>(undefined);
   const [pageSize, setPageSize] = React.useState<number>(10);
   const [currentPage, setCurrentPage] = React.useState<number>(1);
   const [sortColumn, setSortColumn] = React.useState<SortColumn>("actualPublicationDate");
@@ -346,15 +368,14 @@ const CRFListScreen: React.FC<CRFListScreenProps> = ({
 
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [statusFilter, departmentSearch, sortColumn, sortDirection]);
+  }, [statusFilter, departmentFilter, sortColumn, sortDirection]);
 
   const filteredItems = React.useMemo(() => {
-    const query = departmentSearch.trim().toLowerCase();
-    if (!query) {
+    if (!departmentFilter) {
       return items;
     }
-    return items.filter((item) => (item.Department ?? "").toLowerCase().includes(query));
-  }, [departmentSearch, items]);
+    return items.filter((item) => (item.Department ?? "") === departmentFilter);
+  }, [departmentFilter, items]);
 
   const sortedItems = React.useMemo(() => {
     const list = [...filteredItems];
@@ -468,12 +489,25 @@ const CRFListScreen: React.FC<CRFListScreenProps> = ({
               </Option>
             ))}
           </Dropdown>
-          <Input
-            aria-label="Department search"
-            placeholder="Search Department"
-            value={departmentSearch}
-            onChange={(_, data) => setDepartmentSearch(data.value)}
-          />
+          <Dropdown
+            aria-label="Department filter"
+            inlinePopup
+            placeholder="Department"
+            selectedOptions={departmentFilter ? [departmentFilter] : []}
+            onOptionSelect={(_, data) => {
+              const value = data.optionValue;
+              setDepartmentFilter(value === "All" ? undefined : value);
+            }}
+          >
+            <Option key="all-departments" value="All">
+              All departments
+            </Option>
+            {DEPARTMENT_OPTIONS.map((department) => (
+              <Option key={department} value={department}>
+                {department}
+              </Option>
+            ))}
+          </Dropdown>
           <Button appearance="secondary" icon={<ArrowClockwiseRegular />} onClick={() => onRefresh()}>
             Refresh
           </Button>
@@ -691,6 +725,32 @@ const CRFEditFormScreen: React.FC<CRFEditFormScreenProps> = ({ service, isWorkfl
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [item, setItem] = React.useState<ICRFFormItem | null>(null);
   const [existingAttachments, setExistingAttachments] = React.useState<{ FileName: string; ServerRelativeUrl: string }[]>([]);
+  const [removingAttachment, setRemovingAttachment] = React.useState<string | null>(null);
+  const [attachmentActionError, setAttachmentActionError] = React.useState<string | null>(null);
+
+  const removeAttachment = React.useCallback(
+    async (fileName: string) => {
+      if (!Number.isFinite(itemId)) {
+        return;
+      }
+      const confirmed = window.confirm(`Remove attachment "${fileName}"?`);
+      if (!confirmed) {
+        return;
+      }
+
+      setAttachmentActionError(null);
+      setRemovingAttachment(fileName);
+      try {
+        await service.deleteAttachment(itemId, fileName);
+        setExistingAttachments((previous) => previous.filter((file) => file.FileName !== fileName));
+      } catch (err: any) {
+        setAttachmentActionError(err?.message ?? "Unable to remove attachment.");
+      } finally {
+        setRemovingAttachment(null);
+      }
+    },
+    [itemId, service]
+  );
 
   React.useEffect(() => {
     if (!Number.isFinite(itemId)) {
@@ -743,6 +803,7 @@ const CRFEditFormScreen: React.FC<CRFEditFormScreenProps> = ({ service, isWorkfl
           <Text weight="semibold">Edit {resolveContentType(item)}</Text>
           <div className={styles.existingAttachments}>
             <Text weight="semibold">Existing attachments</Text>
+            {attachmentActionError && <Text size={200}>{attachmentActionError}</Text>}
             {existingAttachments.length ? (
               <ul className={styles.attachmentsList}>
                 {existingAttachments.map((file) => (
@@ -750,6 +811,14 @@ const CRFEditFormScreen: React.FC<CRFEditFormScreenProps> = ({ service, isWorkfl
                     <Link href={file.ServerRelativeUrl} target="_blank" rel="noopener noreferrer">
                       {file.FileName}
                     </Link>
+                    <Button
+                      appearance="subtle"
+                      size="small"
+                      disabled={removingAttachment === file.FileName}
+                      onClick={() => removeAttachment(file.FileName)}
+                    >
+                      {removingAttachment === file.FileName ? "Removing..." : "Remove"}
+                    </Button>
                   </li>
                 ))}
               </ul>
