@@ -61,7 +61,8 @@
   align-items: center;
 
   :global(.fui-Dropdown),
-  :global(.fui-Button) {
+  :global(.fui-Button),
+  :global(.fui-Input) {
     min-width: 180px;
   }
 }

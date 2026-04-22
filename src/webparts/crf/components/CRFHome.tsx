@@ -15,6 +15,7 @@ import {
   Spinner,
   Text,
   Link,
+  Input,
   webLightTheme,
 } from "@fluentui/react-components";
 import { AddRegular, ArrowClockwiseRegular, EditRegular } from "@fluentui/react-icons";
@@ -40,7 +41,8 @@ export type CRFHomeProps = {
   httpService: HttpClientService;
 };
 
-const COMM_STATUSES = ["Cancelled", "Placeholder", "Pending Draft", "Published"];
+const COMM_STATUSES = ["Cancelled", "Placeholder", "Pending Draft", "Published"] as const;
+type CommStatus = typeof COMM_STATUSES[number];
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
 type CRFContentTypeSlug = "general" | "marketing" | "transfer" | "qa";
@@ -223,6 +225,25 @@ const CRFHomeApp: React.FC<CRFHomeProps> = ({ sp, context, httpService }) => {
     [loadItems, notify, service]
   );
 
+  const updateInlineStatus = React.useCallback(
+    async (itemId: number, status: CommStatus) => {
+      try {
+        await service.updateItem(context.spHttpClient, itemId, { Comm_x0020_Status: status });
+        setItems((previous) =>
+          previous.map((item) =>
+            item.Id === itemId
+              ? { ...item, Comm_x0020_Status: status as ICRFFormItem["Comm_x0020_Status"] }
+              : item
+          )
+        );
+      } catch (err: any) {
+        setError(err?.message ?? "Unable to update Comm Status.");
+        throw err;
+      }
+    },
+    [context.spHttpClient, service]
+  );
+
   return (
     <IdPrefixProvider value="APP1-">
       <FluentProvider theme={webLightTheme} className={styles.crf}>
@@ -245,11 +266,13 @@ const CRFHomeApp: React.FC<CRFHomeProps> = ({ sp, context, httpService }) => {
                 <CRFListScreen
                   items={items}
                   isLoading={isLoading}
+                  isWorkflowOwner={isWorkflowOwner}
                   statusFilter={statusFilter}
                   onStatusFilterChange={setStatusFilter}
                   onRefresh={loadItems}
                   onEdit={(itemId) => navigate(`/edit/${itemId}`)}
                   onCreate={(contentType) => navigate(`/new/${CONTENT_TYPE_TO_SLUG[contentType]}`)}
+                  onInlineStatusUpdate={updateInlineStatus}
                   statusColor={statusColor}
                 />
               }
@@ -289,38 +312,98 @@ const CRFHomeApp: React.FC<CRFHomeProps> = ({ sp, context, httpService }) => {
 type CRFListScreenProps = {
   items: ICRFFormItem[];
   isLoading: boolean;
+  isWorkflowOwner: boolean;
   statusFilter?: string;
   onStatusFilterChange: (status: string | undefined) => void;
   onRefresh: () => Promise<void>;
   onEdit: (itemId: number) => void;
   onCreate: (contentType: CRFContentType) => void;
+  onInlineStatusUpdate: (itemId: number, status: CommStatus) => Promise<void>;
   statusColor: (status?: string) => React.ComponentProps<typeof Badge>["color"];
 };
+
+type SortColumn = "fiscalWeek" | "actualPublicationDate" | "commStatus" | "title" | "department";
+type SortDirection = "asc" | "desc";
 
 const CRFListScreen: React.FC<CRFListScreenProps> = ({
   items,
   isLoading,
+  isWorkflowOwner,
   statusFilter,
   onStatusFilterChange,
   onRefresh,
   onEdit,
   onCreate,
+  onInlineStatusUpdate,
   statusColor,
 }) => {
+  const [departmentSearch, setDepartmentSearch] = React.useState<string>("");
   const [pageSize, setPageSize] = React.useState<number>(10);
   const [currentPage, setCurrentPage] = React.useState<number>(1);
+  const [sortColumn, setSortColumn] = React.useState<SortColumn>("actualPublicationDate");
+  const [sortDirection, setSortDirection] = React.useState<SortDirection>("desc");
+  const [updatingStatusItemId, setUpdatingStatusItemId] = React.useState<number | null>(null);
 
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [statusFilter]);
+  }, [statusFilter, departmentSearch, sortColumn, sortDirection]);
 
-  const totalItems = items.length;
+  const filteredItems = React.useMemo(() => {
+    const query = departmentSearch.trim().toLowerCase();
+    if (!query) {
+      return items;
+    }
+    return items.filter((item) => (item.Department ?? "").toLowerCase().includes(query));
+  }, [departmentSearch, items]);
+
+  const sortedItems = React.useMemo(() => {
+    const list = [...filteredItems];
+    list.sort((a, b) => {
+      const direction = sortDirection === "asc" ? 1 : -1;
+      switch (sortColumn) {
+        case "fiscalWeek": {
+          const left = a.Actual_x0020_Fiscal_x0020_Week ?? Number.NEGATIVE_INFINITY;
+          const right = b.Actual_x0020_Fiscal_x0020_Week ?? Number.NEGATIVE_INFINITY;
+          return left === right ? 0 : left > right ? direction : -direction;
+        }
+        case "actualPublicationDate": {
+          const left = a.Actual_x0020_Publication_x0020_D
+            ? new Date(a.Actual_x0020_Publication_x0020_D).getTime()
+            : Number.NEGATIVE_INFINITY;
+          const right = b.Actual_x0020_Publication_x0020_D
+            ? new Date(b.Actual_x0020_Publication_x0020_D).getTime()
+            : Number.NEGATIVE_INFINITY;
+          return left === right ? 0 : left > right ? direction : -direction;
+        }
+        case "commStatus": {
+          const left = (a.Comm_x0020_Status ?? "").toLowerCase();
+          const right = (b.Comm_x0020_Status ?? "").toLowerCase();
+          return left.localeCompare(right) * direction;
+        }
+        case "title": {
+          const left = (a.Title ?? "").toLowerCase();
+          const right = (b.Title ?? "").toLowerCase();
+          return left.localeCompare(right) * direction;
+        }
+        case "department": {
+          const left = (a.Department ?? "").toLowerCase();
+          const right = (b.Department ?? "").toLowerCase();
+          return left.localeCompare(right) * direction;
+        }
+        default:
+          return 0;
+      }
+    });
+    return list;
+  }, [filteredItems, sortColumn, sortDirection]);
+
+  const totalItems = sortedItems.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const pageStartIndex = totalItems === 0 ? 0 : (currentPage - 1) * pageSize;
   const pageEndIndex = Math.min(pageStartIndex + pageSize, totalItems);
   const pagedItems = React.useMemo(
-    () => items.slice(pageStartIndex, pageEndIndex),
-    [items, pageStartIndex, pageEndIndex]
+    () => sortedItems.slice(pageStartIndex, pageEndIndex),
+    [sortedItems, pageStartIndex, pageEndIndex]
   );
 
   React.useEffect(() => {
@@ -328,6 +411,27 @@ const CRFListScreen: React.FC<CRFListScreenProps> = ({
       setCurrentPage(totalPages);
     }
   }, [currentPage, totalPages]);
+
+  const toggleSort = React.useCallback((column: SortColumn) => {
+    setSortColumn((current) => {
+      if (current === column) {
+        setSortDirection((direction) => (direction === "asc" ? "desc" : "asc"));
+        return current;
+      }
+      setSortDirection("asc");
+      return column;
+    });
+  }, []);
+
+  const sortLabel = React.useCallback(
+    (column: SortColumn, label: string): string => {
+      if (sortColumn !== column) {
+        return label;
+      }
+      return `${label} ${sortDirection === "asc" ? "▲" : "▼"}`;
+    },
+    [sortColumn, sortDirection]
+  );
 
   return (
     <>
@@ -364,6 +468,12 @@ const CRFListScreen: React.FC<CRFListScreenProps> = ({
               </Option>
             ))}
           </Dropdown>
+          <Input
+            aria-label="Department search"
+            placeholder="Search Department"
+            value={departmentSearch}
+            onChange={(_, data) => setDepartmentSearch(data.value)}
+          />
           <Button appearance="secondary" icon={<ArrowClockwiseRegular />} onClick={() => onRefresh()}>
             Refresh
           </Button>
@@ -383,28 +493,82 @@ const CRFListScreen: React.FC<CRFListScreenProps> = ({
           <table className={styles.simpleTable}>
             <thead>
               <tr>
-                <th>Project/Event</th>
-                <th>Comm Status</th>
-                <th>Department</th>
-                <th>Actual publish date</th>
+                <th>
+                  <Button appearance="transparent" size="small" onClick={() => toggleSort("fiscalWeek")}>
+                    {sortLabel("fiscalWeek", "Published Fiscal Week")}
+                  </Button>
+                </th>
+                <th>
+                  <Button appearance="transparent" size="small" onClick={() => toggleSort("actualPublicationDate")}>
+                    {sortLabel("actualPublicationDate", "Actual Publication Date")}
+                  </Button>
+                </th>
+                <th>
+                  <Button appearance="transparent" size="small" onClick={() => toggleSort("commStatus")}>
+                    {sortLabel("commStatus", "Comm Status")}
+                  </Button>
+                </th>
+                <th>
+                  <Button appearance="transparent" size="small" onClick={() => toggleSort("title")}>
+                    {sortLabel("title", "Project/Event")}
+                  </Button>
+                </th>
+                <th>
+                  <Button appearance="transparent" size="small" onClick={() => toggleSort("department")}>
+                    {sortLabel("department", "Department")}
+                  </Button>
+                </th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {pagedItems.map((item) => (
                 <tr key={item.Id}>
-                  <td>{item.Title}</td>
+                  <td>{item.Actual_x0020_Fiscal_x0020_Week ?? "-"}</td>
+                  <td>{formatActualPublishDate(item.Actual_x0020_Publication_x0020_D)}</td>
                   <td>
-                    {item.Comm_x0020_Status ? (
-                      <Badge appearance="filled" color={statusColor(item.Comm_x0020_Status)}>
-                        {item.Comm_x0020_Status}
-                      </Badge>
+                    {isWorkflowOwner && item.Id ? (
+                      <Dropdown
+                        inlinePopup
+                        selectedOptions={item.Comm_x0020_Status ? [item.Comm_x0020_Status] : []}
+                        value={item.Comm_x0020_Status ?? ""}
+                        disabled={updatingStatusItemId === item.Id}
+                        onOptionSelect={(_, data) => {
+                          const value = data.optionValue;
+                          if (
+                            !value ||
+                            !(COMM_STATUSES as readonly string[]).includes(value) ||
+                            value === item.Comm_x0020_Status ||
+                            !item.Id
+                          ) {
+                            return;
+                          }
+                          setUpdatingStatusItemId(item.Id);
+                          onInlineStatusUpdate(item.Id, value as CommStatus)
+                            .catch(() => {
+                              // Parent message bar handles status update errors.
+                            })
+                            .finally(() => setUpdatingStatusItemId(null));
+                        }}
+                      >
+                        {COMM_STATUSES.map((status) => (
+                          <Option key={status} value={status} text={status}>
+                            {status}
+                          </Option>
+                        ))}
+                      </Dropdown>
                     ) : (
-                      "-"
+                      item.Comm_x0020_Status ? (
+                        <Badge appearance="filled" color={statusColor(item.Comm_x0020_Status)}>
+                          {item.Comm_x0020_Status}
+                        </Badge>
+                      ) : (
+                        "-"
+                      )
                     )}
                   </td>
+                  <td>{item.Title}</td>
                   <td>{item.Department ?? "-"}</td>
-                  <td>{formatActualPublishDate(item.Actual_x0020_Publication_x0020_D)}</td>
                   <td>
                     <div className={styles.actionsCell}>
                       <Button
